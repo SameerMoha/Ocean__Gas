@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About Us - OceanGas</title>
+  <!-- Link to the external CSS file -->
+  <style>
+     /* Navbar */
+     .navbar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            background: rgba(12, 126, 240, 0.8); /* Slight transparency */
+            padding: 1rem 3rem;
+            position: sticky;
+            top: 0;
+            
+            z-index: 1000;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar img {
+            height: 50px;
+            margin-right: 20px;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+            margin-left: auto;
+            padding: 0;
+        }
+
+        .nav-links li {
+            display: inline;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: white;
+            font-size: 18px;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover {
+            background: #0066cc;
+        }
+        /* Responsive */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        align-items: center;
+    }
+    .nav-links {
+        margin-left: 0; /* Center links for smaller screens */
+        text-align: center;
+        margin-top: 10px;
+    }
+}
+    /* Basic Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: Arial, sans-serif;
+    color: #333;
+    line-height: 1.6;
+    background: #fff;
+  }
+  
+  /* Hero / Banner */
+  .hero {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    background: url(oil-gas-1280x720.jpg)
+                center center/cover no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  
+  .hero h1 {
+    color: #fff;
+    font-size: 3rem;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+  }
+  
+  /* Main Container */
+  .container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+  
+  /* Section Title */
+  .section-title {
+    margin-bottom: 1.5rem;
+    font-size: 2rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #0c3c60; /* Dark navy or brand color */
+  }
+  
+  /* Vision Section */
+  .vision-section {
+    margin-bottom: 2rem;
+  }
+  .vision-section p {
+    margin-bottom: 1rem;
+    line-height: 1.8;
+  }
+  
+  /* Leadership Section */
+  .leadership-section {
+    margin-bottom: 2rem;
+  }
+  .leadership-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
+  }
+  .leader-card {
+    background: #f9f9f9;
+    border-radius: 8px;
+    overflow: hidden;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    padding-bottom: 1rem;
+  }
+  .leader-card img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+  }
+  .leader-card h3 {
+    margin: 0.75rem 0 0.25rem;
+    font-size: 1.1rem;
+    color: #0c3c60;
+  }
+  .leader-card p {
+    font-size: 0.9rem;
+    color: #555;
+  }
+  
+  /* Values Section */
+  .values-section {
+    margin-bottom: 2rem;
+  }
+  .values-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 2rem;
+  }
+  .values-box {
+    background: #f9f9f9;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  .values-box h4 {
+    margin-bottom: 0.5rem;
+    color: #0c3c60;
+  }
+  
+  /* Footer */
+  footer {
+    background: #0c3c60;
+    color: #fff;
+    padding: 1rem;
+    text-align: center;
+    margin-top: 2rem;
+  }
+  footer p {
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+  }
+  
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
+    .hero {
+      height: 250px;
+    }
+    .hero h1 {
+      font-size: 2rem;
+    }
+  }
+  
+  #backToTopBtn {
+    display: none; /* Hidden by default */
+    position: fixed;
+    bottom: 15px;
+    right: 15px; /* Fixed at the bottom-left */
+    z-index: 100;
+    font-size: 14px; /* Smaller size */
+    border: none;
+    outline: none;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    padding: 8px 10px; /* Smaller padding */
+    border-radius: 50%;
+    width: 35px; /* Smaller width */
+    height: 35px; /* Smaller height */
+    text-align: center;
+    line-height: 18px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    transition: 0.3s;
+}
+
+#backToTopBtn:hover {
+    background-color: #0056b3;
+    transform: scale(1.1);
+}
+
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <img src="oil-gas-1280x720.png" alt="Logo"/>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero / Banner -->
+  <section class="hero">
+    <h1>About Us</h1>
+  </section>
+
+  <!-- Main Content -->
+  <main class="container">
+    <!-- Our Vision -->
+    <section class="vision-section">
+      <h2 class="section-title">Our Vision</h2>
+      <p>
+        We are disruptive in the field of energy for cooking at scale, dedicated to accelerating access 
+        to clean, reliable, and affordable energy. Our mission is to transform lives through innovative 
+        technology solutions, making cooking gas accessible and environmentally sustainable for all.
+      </p>
+      <p>
+        By focusing on innovation and responsible business practices, we aim to shape a future where 
+        every household can benefit from the convenience, safety, and cost-efficiency of modern 
+        cooking energy.
+      </p>
+    </section>
+
+    <!-- Our Leadership -->
+    <section class="leadership-section">
+      <h2 class="section-title">Our Leadership</h2>
+      <div class="leadership-grid">
+        <!-- CEO -->
+        <div class="leader-card">
+          <img 
+            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQSxa3WicyllxrTUcdawH5qYYWYOsoMNZxCc6zdPOQ3ENF2SPkK00q4L8InD9S4gIlfY5Q&usqp=CAU" 
+            alt="CEO Photo"
+          >
+          <h3>Chief Executive Officer</h3>
+          <p>Tim Cook</p>
+        </div>
+        <!-- CFO -->
+        <div class="leader-card">
+          <img 
+            src="https://africaindialogue.com/wp-content/uploads/2021/06/IMG_0884-1-scaled-e1623660461581.jpg" 
+            alt="CFO Photo"
+          >
+          <h3>Chief Financial Officer</h3>
+          <p>Jane Fraser</p>
+        </div>
+        <!-- Head of Operations -->
+        <div class="leader-card">
+          <img 
+            src="https://static.independent.co.uk/s3fs-public/thumbnails/image/2015/06/23/11/ava-duvernay.jpg?quality=75&width=640&crop=3%3A2%2Csmart&auto=webp" 
+            alt="Head of Operations Photo"
+          >
+          <h3>Head of Operations</h3>
+          <p>Lisa Su</p>
+        </div>
+        <div class="leader-card">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTXqSN-LZXys3-GZcdaUy2a4X54qWWcdkD2GQ&s"
+          alt="Board Chairman"
+          >
+          <h3>Board Chairman</h3>
+          <p>Oliver Zipse</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Our Values -->
+    <section class="values-section">
+      <h2 class="section-title">Our Values</h2>
+      <p style="margin-bottom: 1.5rem;">
+        Our values drive our behavior, ensuring that everything we do aligns with the principles of 
+        sustainability, inclusivity, and excellence.
+      </p>
+      <div class="values-columns">
+        <div class="values-box">
+          <h4>Diversity & Inclusivity</h4>
+          <p>
+            We believe that a diverse team brings unique perspectives and fosters innovation. We welcome
+            people from all backgrounds, ensuring every voice is heard.
+          </p>
+        </div>
+        <div class="values-box">
+          <h4>Customer Obsession</h4>
+          <p>
+            Our customers are at the heart of everything we do. We continually strive to exceed 
+            expectations and deliver exceptional service.
+          </p>
+        </div>
+        <div class="values-box">
+          <h4>Transforming Lives</h4>
+          <p>
+            We are committed to providing clean, reliable, and affordable energy for cooking. Our 
+            solutions transform communities and uplift the quality of life for families.
+          </p>
+        </div>
+        <div class="values-box">
+          <h4>Uniquely in Tech & Business</h4>
+          <p>
+            By blending advanced technology with sound business practices, we aim to make a measurable 
+            impact on the environment and society.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2025 All Rights Reserved.</p>
+
+    <script>
+      
+    // Show the button when scrolling down
+    window.onscroll = function() {
+        var btn = document.getElementById("backToTopBtn");
+        if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+            btn.style.display = "block";
+        } else {
+            btn.style.display = "none";
+        }
+    };
+
+    // Scroll back to top when button is clicked
+    function scrollToTop() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    </script>
+       <button onclick="scrollToTop()" id="backToTopBtn" title="Go to top">↑</button>
+  </footer>
+  <button onclick="scrollToTop()" id="backToTopBtn" title="Go to top">↑</button>
+</body>
+</html>

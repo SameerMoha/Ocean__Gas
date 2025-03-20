@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OceanGas Enterprise</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome Icons -->
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+    rel="stylesheet"
+  />
+
+  <!-- Google Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    /* Popup Styles */
+    .popup {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 15px 20px;
+      border-radius: 10px;
+      font-size: 1.2rem;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    /* General Styles */
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+      background: #f8f9fa;
+      color: #0066cc;
+      overflow-x: hidden;
+    }
+
+    /* Navbar */
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      background: #0066cc;
+      padding: 1rem 3rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+      width: 100%;
+    }
+    .navbar img {
+      height: 50px;
+      margin-right: 20px;
+    }
+    .nav-links {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      margin-left: auto;
+      padding: 0;
+    }
+    .nav-links li {
+      display: inline;
+      position: relative;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: white;
+      font-size: 18px;
+      padding: 8px 16px;
+      border-radius: 5px;
+      transition: 0.3s;
+    }
+    .nav-links a:hover {
+      background: #005bb5;
+    }
+
+    /* Dropdown Menu */
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: #0066cc;
+      padding: 10px 0;
+      border-radius: 5px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      z-index: 100;
+    }
+    .dropdown-menu a {
+      display: block;
+      padding: 8px 16px;
+      color: white;
+      white-space: nowrap;
+    }
+    .dropdown-menu a:hover {
+      background: #005bb5;
+    }
+    .dropdown:hover .dropdown-menu {
+      display: block;
+    }
+
+    /* Responsive Navbar */
+    @media (max-width: 768px) {
+      .navbar {
+        flex-direction: column;
+        align-items: center;
+      }
+      .nav-links {
+        margin-left: 0;
+        text-align: center;
+        margin-top: 10px;
+      }
+    }
+
+    /* Ensure content is pushed below navbar */
+    .container {
+      width: 100%;
+      margin-top: 80px;
+      text-align: center;
+    }
+
+    /* Slogan Section */
+    .slogan-section {
+      width: 100%;
+      background: rgba(44, 62, 80, 0.9);
+      text-align: center;
+      padding: 20px 0;
+      margin-top: 60px;
+    }
+    .slogan {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #ffffff;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      margin: 0;
+    }
+
+    .video-container {
+      position: relative;
+      padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+      height: 0;
+      overflow: hidden;
+      max-width: 100%;
+      background: black;
+    }
+    .vimeo-wrapper iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Hero Image */
+    .hero-image {
+      width: 100%;
+      height: calc(100vh - 60px);
+      object-fit: cover;
+      margin-top: 60px;
+    }
+
+    /* Main Title */
+    .main-title {
+      text-align: center;
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #fff;
+      margin-top: 20px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Customer Reviews */
+    .customer-reviews {
+      text-align: center;
+      padding: 50px 20px;
+      background: #f8f8f8;
+    }
+    .customer-reviews h2 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+    .reviews-container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .review {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      max-width: 300px;
+    }
+    .review p {
+      font-size: 1rem;
+      color: #333;
+    }
+    .review h4 {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #555;
+    }
+
+    /* Quick Links */
+    .quick-links {
+      background: #000000;
+      color: white;
+      padding: 3rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin: 0;
+    }
+    .quick-links h3 {
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+    }
+    .quick-links ul {
+      list-style: none;
+      padding: 0;
+    }
+    .quick-links ul li {
+      margin: 8px 0;
+    }
+    .quick-links ul li a {
+      text-decoration: none;
+      color: white;
+      transition: 0.3s;
+    }
+    .quick-links ul li a:hover {
+      color: #ccc;
+    }
+
+    /* Social Media Icons */
+    .social-icons {
+      margin-top: 1rem;
+    }
+    .social-icons a {
+      display: inline-block;
+      margin-right: 10px;
+      color: white;
+      font-size: 1.8rem;
+      transition: 0.3s;
+    }
+    .social-icons a:hover {
+      color: #0066cc;
+      transform: scale(1.1);
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 1rem 0;
+      background: #004080;
+      color: #fff;
+      width: 100%;
+    }
+
+    /* Back to Top Button */
+    #backToTopBtn {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 100;
+      font-size: 18px;
+      border: none;
+      outline: none;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      padding: 10px 15px;
+      border-radius: 50%;
+    }
+    #backToTopBtn:hover {
+      background-color: #F24E43;
+    }
+        
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <img src="Oceangas.png" alt="Logo"/>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li class="dropdown">
+        <a href="#">Sign-In ↓</a>
+        <div class="dropdown-menu">
+            <a href="staff/staff_login.php">Staff Login</a>
+            <a href="customer/login.php">Customer Login</a>
+        </div>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Hero/Video Section -->
+  <section class="main-video alignfull video-layout" id="main-video">
+    <div class="video-container">
+      <div class="container" style="margin-top: 80px;">
+        <h1 class="main-title">OceanGas Enterprise</h1>
+      </div>
+      <div
+        class="vimeo-wrapper"
+        style="background-image: url('https://circlegas.co.uk/wp-content/uploads/2020/02/video-fallback.jpg')"
+      >
+        <iframe
+          src="https://player.vimeo.com/video/390062916?background=1&amp;autoplay=1&amp;loop=1&amp;byline=0&amp;title=0"
+          frameborder="0"
+          webkitallowfullscreen
+          mozallowfullscreen
+          allowfullscreen
+        ></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- "A Better Alternative" Section -->
+  <section class="flex items-center justify-center bg-white py-12">
+    <div class="text-center max-w-2xl mx-auto px-4">
+      <div class="flex justify-between items-center mb-4">
+        <i class="fas fa-chevron-left text-gray-400"></i>
+        <i class="fas fa-chevron-right text-gray-400"></i>
+      </div>
+      <div class="mb-4">
+        <img
+          alt="Illustration of a person sitting next to a cooking pot on a stove"
+          class="mx-auto"
+          height="100"
+          src="https://storage.googleapis.com/a1aa/image/y1T2jBUUmKSCsNLNkRihIi2RR2gWs6MbKXWpazBZdjo.jpg"
+          width="100"
+        />
+      </div>
+      <h2 class="text-xl font-bold text-gray-800 mb-2">A Better Alternative</h2>
+      <p class="text-gray-600 mb-4">
+        When households cannot afford the upfront costs of a cylinder of cooking gas, they resort to unhealthy, expensive and environmentally unfriendly charcoal or kerosene. Circle Gas’s unique business model can make gas accessible to millions of households who can’t currently afford it.
+      </p>
+      <div class="flex justify-center space-x-2">
+        <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+        <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+        <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+        <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- "WITH SUPPORT FROM" Section -->
+  <section class="font-roboto bg-white flex flex-col items-center justify-center p-4 py-12">
+    <div class="text-center">
+      <p class="text-xs font-bold text-gray-600 mb-2">WITH SUPPORT FROM</p>
+      <img
+        alt="Techbiz Infotech logo"
+        class="mx-auto mb-4 w-64 h-auto"
+        src="https://media.licdn.com/dms/image/v2/C4E1BAQFFEul-gLU8Uw/company-background_10000/company-background_10000/0/1584040677917/techbizinfotech_cover?e=2147483647&v=beta&t=AzE8h3N53AG698Zbp55j29aCDKj_1VCe-jp3iDRoBI4"
+      />
+      <h1 class="text-xl font-bold text-gray-800 mb-2">
+        Kenya Operations Are Powered by Techbiz Infotech
+      </h1>
+      <p class="text-gray-600 mb-4">
+        Techbiz Infotech is a strategic investor in Ocean Gas and has an operating agreement with the Ocean Gas Kenyan subsidiary M-Gas, covering branding and marketing, technology and customer service. Mobile money payments in Kenya will be processed using Safaricom’s M-Pesa.
+      </p>
+      <a class="text-blue-600 font-bold" href="https://www.techbizinfotech.com/">
+        VISIT Techbiz Infotech
+      </a>
+    </div>
+  </section>
+
+  <!-- Customer Reviews Section -->
+  <section class="customer-reviews">
+    <h2>What Our Customers Say</h2>
+    <div class="reviews-container">
+      <div class="review">
+        <p>"Great service and amazing support! Highly recommended."</p>
+        <h4>- Sarah J.</h4>
+      </div>
+      <div class="review">
+        <p>"Fast and efficient. Will definitely use their service again!"</p>
+        <h4>- Michael T.</h4>
+      </div>
+      <div class="review">
+        <p>"Very professional and friendly team. 5 stars!"</p>
+        <h4>- Emily R.</h4>
+      </div>
+      <div class="review">
+        <p>"Very fast service, I will recommend to my friends."</p>
+        <h4>- Athman A.</h4>
+      </div>
+    </div>
+  </section>
+
+  <!-- Counter Popup -->
+  <div class="popup" id="counterPopup">
+    Distributed more than <span id="counter">17004565</span> gas cylinders
+  </div>
+
+  <!-- Quick Links -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <section class="quick-links">
+     <div>
+         <h3>Quick Links</h3>
+         <ul>
+             <li><a href="index.html">Home</a></li>
+             <li><a href="about.html">About Us</a></li>
+             <li><a href="contact.html">Contact</a></li>
+         </ul>
+     </div>
+ 
+     <div>
+         <h3>Contact Details</h3>
+         <p><strong>📞 Phone:</strong> +254 123 456 789</p>
+         <p><strong>✉️ Email:</strong> <a href="mailto:oceangas99@gmail.com">oceangas99@gmail.com</a></p>
+         <div class="social-icons">
+             <a href="https://www.instagram.com/" target="_blank"><i class="fab fa-instagram"></i></a>
+             <a href="https://twitter.com/" target="_blank"><i class="fab fa-twitter"></i></a>
+             <a href="https://facebook.com/" target="_blank"><i class="fab fa-facebook"></i></a>
+         </div>
+     </div>
+  </section>
+
+  <footer>
+     <p>&copy; 2025 Ocean Gas Company. All Rights Reserved.</p>
+  </footer>
+
+
+ 
+  <!-- Back to Top Button -->
+  <p>
+   <button onclick="scrollToTop()" id="backToTopBtn" title="Go to top">↑</button>
+  </p>
+
+  <!-- Script Section -->
+  <script>
+    // Counter animation
+    let count = 0;
+    function incrementCounter() {
+      const counterElement = document.getElementById("counter");
+      const target = 278000;
+      const interval = setInterval(() => {
+        if (count < target) {
+          count += Math.floor(Math.random() * 3000) + 500;
+          if (count > target) count = target;
+          counterElement.textContent = count.toLocaleString();
+        } else {
+          clearInterval(interval);
+        }
+      }, 50);
+    }
+    incrementCounter();
+
+    // Show the back-to-top button when scrolling down
+    window.onscroll = function() {
+        var btn = document.getElementById("backToTopBtn");
+        if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+            btn.style.display = "block";
+        } else {
+            btn.style.display = "none";
+        }
+    };
+
+    // Scroll back to top when button is clicked
+    function scrollToTop() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>
