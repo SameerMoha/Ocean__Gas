@@ -7,29 +7,30 @@ $error = "";
 
 // Process the login form when submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Trim username and password inputs
     $username = trim($_POST['username']);
     $password = trim($_POST['password']);
-    
+
     if (empty($username) || empty($password)) {
         $error = "Please enter both username and password.";
     } else {
-        // Prepare statement to fetch user details
-        $stmt = $conn->prepare("SELECT id, username, password, role FROM users WHERE username = ?");
+        // Include is_active in the query
+        $stmt = $conn->prepare("SELECT id, username, password, role, is_active FROM users WHERE username = ?");
         if (!$stmt) {
             $error = "Database error: " . $conn->error;
         } else {
             $stmt->bind_param("s", $username);
             $stmt->execute();
             $stmt->store_result();
-    
+
             if ($stmt->num_rows == 1) {
-                $stmt->bind_result($id, $dbUsername, $hashedPassword, $role);
+                $stmt->bind_result($id, $dbUsername, $hashedPassword, $role, $isActive);
                 $stmt->fetch();
-    
-                // Verify the provided password against the hashed password in the DB
-                if (password_verify($password, $hashedPassword)) {
-                    // Set session variables for the user
+
+                // Check if account is active
+                if (!$isActive) {
+                    $error = "Your account has been deactivated. Please contact the administrator.";
+                } elseif (password_verify($password, $hashedPassword)) {
+                    // Set session variables
                     $_SESSION['staff_id'] = $id;
                     $_SESSION['staff_username'] = $dbUsername;
                     $_SESSION['staff_role'] = $role;
@@ -43,6 +44,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         exit();
                     } elseif ($role === 'procurement') {
                         header("Location: /OceanGas/staff/procurement_staff_dashboard.php");
+                        exit();
+                    } elseif ($role === 'support') {
+                        header("Location: /OceanGas/staff/support_dashboard.php");
                         exit();
                     } else {
                         $error = "Access denied. Unknown role.";
@@ -64,7 +68,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <title>Staff Login</title>
-    <!-- Bootstrap CSS for styling -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         body { background: #f7f7f7; }
@@ -106,7 +109,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </div>
 </div>
-<!-- Optional Bootstrap JS and dependencies -->
+
+<!-- Optional Bootstrap JS -->
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>

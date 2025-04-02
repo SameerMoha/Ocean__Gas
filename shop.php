@@ -152,22 +152,57 @@ if (!$result) {
 
   <!-- Products Section -->
   <main class="container mx-auto px-4 py-8">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Changed grid to display 3 columns on medium screens and above -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <?php 
+      // Array of image URLs for different product types
+      $productImages = [
+        '6kg' => [
+          'https://gobeba.com/wp-content/uploads/2019/03/IMG_0170-768x512.jpg',
+          'https://gobeba.com/wp-content/uploads/2019/03/IMG_0174-1-300x300.jpg',
+          'https://gobeba.com/wp-content/uploads/2019/03/IMG_0177-768x512.jpg'
+        ],
+        '12kg' => [
+          'https://gobeba.com/wp-content/uploads/2019/03/IMG_0180-768x512.jpg',
+          'https://gobeba.com/wp-content/uploads/2019/03/IMG_0167-1-300x300.jpg',
+          'https://gobeba.com/wp-content/uploads/2019/03/IMG_0173.jpg'
+        ],
+        '13kg' => [
+          'https://easygasco.com/wp-content/uploads/2022/08/K-gas-13-kg-cylinder.jpg',
+          'https://protankke.co.ke/wp-content/uploads/2023/03/Oil-Gas-LPG-Hose-Lpg-Gas-Tank-13kg.jpg',
+          'https://www.heshimagas.co.ke/wp-content/uploads/2022/05/13kg-300x300.png'
+        ],
+        'default' => 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTX4aS8pxW5uFjpK2u2l9nrUxFKFdyGEzShag&s'
+      ];
+      
+      $counter = 0; // To keep track of which image to use from the arrays
+      
       while($row = $result->fetch_assoc()): 
         // Normalize the product string to lowercase for easier comparison.
         $productName = strtolower(trim($row['product']));
         
-        // Check if the product is a 6kg gas cylinder.
+        // Set product price based on type
         if (strpos($productName, '6kg') !== false) {
-            $img = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRyrg_2y3_ZJc_PaB5J0OMEKRTHWVEttzy_XQ&s";
+            $imgType = '6kg';
             $price = 1200;
         } else if (strpos($productName, '12kg') !== false) {
-            $img = "https://www.rihalenergy.com/wp-content/uploads/2019/09/gas-bottle-image-layer-B.png";
+            $imgType = '12kg';
             $price = 2300;
+        } else if (strpos($productName, '13kg') !== false) {
+            $imgType = '13kg';
+            $price = 2500;
         } else {
-            $img = "https://example.com/path/to/generic-default-image.jpg"; 
-            $price = 0;
+            $imgType = 'default';
+            $price = 2000;
+        }
+        
+        // Select an image from the appropriate array
+        if ($imgType !== 'default') {
+            $imgIndex = $counter % count($productImages[$imgType]);
+            $img = $productImages[$imgType][$imgIndex];
+            $counter++;
+        } else {
+            $img = $productImages['default'];
         }
       ?>
       <div class="product-card p-6 rounded-lg shadow-lg">
@@ -260,7 +295,7 @@ if (!$result) {
       }
 
       modalContent.innerHTML = html;
-      document.getElementById('cartModalTotal').innerHTML = `Ksh ${cart.total}`;
+      document.getElementById('cartModalTotal').textContent = cart.total;
     }
 
     // Show empty cart modal.
