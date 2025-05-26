@@ -6,6 +6,7 @@ if (!isset($_SESSION['staff_username'])) {
     exit();
 }
 
+
 $staffName = $_SESSION['staff_username'];
 
 // Define the current page file name
@@ -44,13 +45,21 @@ if ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-// Query the stock table for current inventory data with supplier information
-$stock_sql = "SELECT id, product, quantity, created_at FROM stock";
+// Query the stock table for current inventory data
+$stock_sql = "SELECT product_id, product_name, quantity, created_at FROM products";
 $stock_result = $conn->query($stock_sql);
 $stocks = [];
+$supplierData = [];
+$supplierNames = [];
+$supplierQuantities = [];
+
 if ($stock_result->num_rows > 0) {
     while ($row = $stock_result->fetch_assoc()) {
         $stocks[] = $row;
+        $productName = trim($row['product_name']);
+        $supplierData[$productName] = $row['quantity'];
+        $supplierNames[] = $productName;
+        $supplierQuantities[] = $row['quantity'];
     }
 }
 
@@ -68,39 +77,12 @@ $thresholds = [
 ];
 
 foreach ($stocks as $stock) {
-    $productName = trim($stock['product']);
+    $productName = trim($stock['product_name']);
     
     // Check if we have a threshold defined for this product
     if (isset($thresholds[$productName]) && $stock['quantity'] < $thresholds[$productName]) {
         $low_stock_notifications[] = "Low stock alert: {$productName} Cylinders are below threshold (Current: {$stock['quantity']}, Threshold: {$thresholds[$productName]}).";
     }
-}
-
-// Query to get all suppliers and their quantities for charts
-$supplierData = [];
-foreach ($stocks as $stock) {
-    $productName = trim($stock['product']);
-    $supplierData[$productName] = $stock['quantity'];
-}
-
-// Create arrays for chart data
-$supplierNames = [];
-$supplierQuantities = [];
-
-// Stock data for specific suppliers - this data is from the table you provided
-$supplierData = [
-    'Shell Afrigas 12kg' => 50,
-    'K-Gas 12kg' => 35,
-    'Total Gas 12kg' => 19,
-    'Shell Afrigas 6kg' => 120,
-    'K-Gas 6kg' => 50,
-    'Total Gas 6kg' => 31
-];
-
-// Add data for each supplier to arrays for charts
-foreach ($supplierData as $name => $quantity) {
-    $supplierNames[] = $name;
-    $supplierQuantities[] = $quantity;
 }
 
 // Query for the Budget vs Actual data from the procurement_funds table
@@ -194,12 +176,13 @@ $conn->close();
       }
       .topbar-icons {
           display: flex;
-          gap: 15px;
+          
           align-items: center;
       }
       .topbar-icons i {
-          font-size: 20px;
+          font-size: 16px;
           cursor: pointer;
+          color: black;
       }
       /* Bell icon badge */
       .position-relative {
@@ -209,7 +192,7 @@ $conn->close();
           position: absolute;
           top: -4px;
           right: -4px;
-          font-size: 0.6rem; /* Smaller font size */
+          font-size: 0.5rem; /* Smaller font size */
           padding: 2px 4px;  /* Adjust padding */
       }
       /* Dropdown Overrides */
@@ -240,6 +223,27 @@ $conn->close();
   </style>
 </head>
 <body>
+<script>
+  // If we’re inside an iframe, window.self !== window.top
+  if (window.self !== window.top) {
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Remove the sidebar element entirely
+      const sidebar = document.querySelector('.sidebar');
+      if (sidebar) sidebar.remove();
+      
+      const topbar = document.querySelector('.topbar');
+      if (topbar) topbar.remove();
+      // 2. Reset your main content to fill the viewport
+      const content = document.querySelector('.content');
+      if (content) {
+        content.style.marginLeft = '0';
+        content.style.width      = '100%';
+        content.style.padding    = '20px';
+      }
+
+    });
+  }
+</script>
     <!-- Sidebar -->
     <div class="sidebar">
         <h2>Procurement Panel</h2>
@@ -269,7 +273,7 @@ $conn->close();
             <i class="fas fa-envelope me-3"></i>
             <!-- Bell Icon Dropdown -->
             <div class="dropdown me-3">
-              <a href="#" class="dropdown-toggle" id="bellDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              <a href="#" class="dropdown-toggle" id="bellDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="color: black;">
                 <i class="fas fa-bell position-relative">
                   <?php if(count($low_stock_notifications) > 0): ?>
                     <span class="badge rounded-pill bg-danger badge-notification">
@@ -278,7 +282,7 @@ $conn->close();
                   <?php endif; ?>
                 </i>
               </a>
-              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="bellDropdown" style="min-width: 250px;">
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="bellDropdown" style="min-width: 250px; ">
                 <?php if(!empty($low_stock_notifications)): ?>
                   <?php foreach($low_stock_notifications as $note): ?>
                     <li>
@@ -296,7 +300,7 @@ $conn->close();
             <div class="dropdown">
               <a href="#" class="dropdown-toggle d-flex align-items-center" 
                  id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false" 
-                 style="text-decoration: none;">
+                 style="text-decoration: none; color:black">
                 <img src="<?php echo htmlspecialchars($profileImage); ?>" 
                      alt="Profile" class="rounded-circle" width="23" height="23">
               </a>

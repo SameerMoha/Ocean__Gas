@@ -10,20 +10,26 @@ if (!isset($_SESSION['staff_username'])) {
     exit();
 }
 
-// Query the stock table for inventory details
-$query = "SELECT * FROM stock";
+// Query the stock table for inventory details + the image_path
+$query = "
+  SELECT * FROM products
+  ORDER BY product_id
+";
 $result = $conn->query($query);
-
 if (!$result) {
     die("Query error: " . $conn->error);
 }
+
+// Base URL & filesystem prefix for image checks
+$baseUrl  = '/OceanGas/';
+$fsPrefix = $_SERVER['DOCUMENT_ROOT'] . '/OceanGas/';  // e.g. C:\xampp\htdocs\OceanGas\
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stock / Inventory</title>
+  <title>Stock Sales</title>
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Font Awesome -->
@@ -41,15 +47,15 @@ if (!$result) {
     }
     /* Sidebar styles */
     .sidebar {
-  width: 250px;
-  background: #6a008a;
-  color: white;
-  padding: 20px;
-  height: 100vh; /* Full height */
-  position: sticky;
-  top: 0; /* Stick to the top */
-  overflow-y: auto; /* Allows scrolling if content is too long */
-}
+      width: 250px;
+      background: #6a008a;
+      color: white;
+      padding: 20px;
+      height: 100vh; /* Full height */
+      position: sticky;
+      top: 0; /* Stick to the top */
+      overflow-y: auto; /* Allows scrolling if content is too long */
+    }
     .sidebar h2 {
       margin-top: 0;
     }
@@ -124,11 +130,21 @@ if (!$result) {
     <!-- Sidebar -->
     <div class="sidebar">
       <h2>Procurement Panel</h2>
-      <a href="/OceanGas/staff/procurement_staff_dashboard.php" class="<?php echo ($current_page === 'procurement_staff_dashboard.php') ? 'active' : ''; ?>"><i class="fas fa-truck"></i> Dashboard</a>
-      <a href="/OceanGas/staff/stock_procurement.php" class="<?php echo ($current_page === 'stock_procurement.php') ? 'active' : ''; ?>"><i class="fas fa-box"></i> Stock/Inventory</a>
-      <a href="/OceanGas/staff/purchase_history_reports.php" class="<?php echo ($current_page === 'purchase_history_reports.php') ? 'active' : ''; ?>"><i class="fas fa-receipt"></i> Purchase History</a>
-      <a href="/OceanGas/staff/suppliers.php" class="<?php echo ($current_page === 'suppliers.php') ? 'active' : ''; ?>"><i class="fas fa-industry"></i> Suppliers</a>
-      <a href="/OceanGas/staff/financial_overview.php" class="<?php echo ($current_page === 'financial_overview.php') ? 'active' : ''; ?>"><i class="fas fa-credit-card"></i> Financial Overview</a>
+    <a href="/OceanGas/staff/procurement_staff_dashboard.php" class="<?php echo ($current_page === 'procurement_staff_dashboard.php') ? 'active' : ''; ?>">
+            <i class="fas fa-truck"></i> Dashboard
+        </a>
+        <a href="/OceanGas/staff/stock_procurement.php" class="<?php echo ($current_page === 'stock_procurement.php') ? 'active' : ''; ?>">
+            <i class="fas fa-box"></i> Stock/Inventory
+        </a>
+        <a href="/OceanGas/staff/purchase_history_reports.php" class="<?php echo ($current_page === 'purchase_history_reports.php') ? 'active' : ''; ?>">
+            <i class="fas fa-receipt"></i> Purchase History
+        </a>
+        <a href="/OceanGas/staff/suppliers.php" class="<?php echo ($current_page === 'suppliers.php') ? 'active' : ''; ?>">
+            <i class="fas fa-industry"></i> Suppliers
+        </a>
+        <a href="/OceanGas/staff/financial_overview.php" class="<?php echo ($current_page === 'financial_overview.php') ? 'active' : ''; ?>">
+            <i class="fas fa-credit-card"></i> Financial Overview
+        </a>
     </div>
 
     <!-- Main Content Wrapper -->
@@ -138,44 +154,28 @@ if (!$result) {
         <div class="row">
           <?php while($row = $result->fetch_assoc()): ?>
             <?php 
-              // Determine the image URL based on the product text
-              $image_url = '';
-              $product = $row['product'];
-              if (stripos($product, 'Shell Afrigas') !== false) {
-                  if (stripos($product, '6kg') !== false) {
-                      $image_url = 'https://gobeba.com/wp-content/uploads/2019/03/IMG_0170-768x512.jpg';
-                  } else {
-                      $image_url = 'https://gobeba.com/wp-content/uploads/2019/03/IMG_0180-768x512.jpg';
-                  }
-              } elseif (stripos($product, 'K-Gas') !== false) {
-                  if (stripos($product, '6kg') !== false) {
-                      $image_url = 'https://gobeba.com/wp-content/uploads/2019/03/IMG_0174-1-300x300.jpg';
-                  } else {
-                      $image_url = 'https://gobeba.com/wp-content/uploads/2019/03/IMG_0167-1-300x300.jpg';
-                  }
-              } elseif (stripos($product, 'Total Gas') !== false) {
-                  if (stripos($product, '6kg') !== false) {
-                      $image_url = 'https://gobeba.com/wp-content/uploads/2019/03/IMG_0177-768x512.jpg';
-                  } else {
-                      $image_url = 'https://gobeba.com/wp-content/uploads/2019/03/IMG_0173.jpg';
-                  }
+              // Build filesystem path to check existence
+              $fsPath = $fsPrefix . ltrim($row['image_path'], '/');
+              if (!empty($row['image_path']) && file_exists($fsPath)) {
+                  $image_url = $baseUrl . ltrim($row['image_path'], '/');
               } else {
-                  // Default image if none of the suppliers match
-                  $image_url = 'https://example.com/default_gas_cylinder.jpg';
+                  $image_url = $baseUrl . 'assets/images/default.jpg';
               }
             ?>
             <div class="col-md-6 col-lg-4">
               <div class="card">
-                <img src="<?php echo $image_url; ?>" alt="<?php echo htmlspecialchars($product); ?>" class="card-img-top">
+                <img src="<?php echo htmlspecialchars($image_url); ?>"
+                     alt="<?php echo htmlspecialchars($row['product_name']); ?>"
+                     class="card-img-top">
                 <div class="card-body">
                   <!-- Display the full product text -->
-                  <h5 class="card-title"><?php echo htmlspecialchars($product); ?></h5>
+                  <h5 class="card-title"><?php echo htmlspecialchars($row['product_name']); ?></h5>
                   <p class="available-stock">Available Stock:</p>
                   <p class="stock-number"><?php echo htmlspecialchars($row['quantity']); ?></p>
                   <p class="product-details">
                     High quality LPG cylinder. Check back regularly for updated stock levels.
                   </p>
-                  <a href="#" class="btn btn-primary">Update Stock</a>
+                  <a href="suppliers.php" class="btn btn-primary">Update Stock</a>
                 </div>
               </div>
             </div>

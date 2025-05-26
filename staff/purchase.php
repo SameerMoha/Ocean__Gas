@@ -1,108 +1,126 @@
 <?php
 session_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 require_once $_SERVER['DOCUMENT_ROOT'] . '/OceanGas/includes/db.php';
 
-// Ensure the user is logged in
-if (!isset($_SESSION['staff_username']) || !isset($_SESSION['staff_id'])) {
-    header("Location: /OceanGas/staff/staff_login.php");
-    exit();
+// 1) Auth check
+if (!isset($_SESSION['staff_username'])) {
+    die("Access denied. Please log in.");
 }
 
-if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-    die("Invalid request.");
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    die("Invalid request method.");
 }
 
-// Get and sanitize form data
-$supplier_id = isset($_POST['supplier_id']) ? intval($_POST['supplier_id']) : 0;
-$product = isset($_POST['product']) ? trim($_POST['product']) : '';
-$quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 0;
+// 2) Sanitize POST data
+$supplier_id = intval($_POST['supplier_id']);
+$product_id  = intval($_POST['product_id']);
+$quantity    = intval($_POST['quantity']);
 
-if ($supplier_id <= 0) {
-    die("Invalid supplier.");
-}
-if (empty($product)) {
-    die("Product is required.");
-}
-if ($quantity <= 0) {
-    die("Quantity must be a positive number.");
-}
-
-// Validate product type: only allow "6kg" or "12kg"
-$allowed_products = array('6kg', '12kg');
-if (!in_array($product, $allowed_products)) {
-    die("Invalid product type.");
-}
-
-// Validate that the supplier exists and retrieve cost info
-$stmt = $conn->prepare("SELECT cost_6kg, cost_12kg FROM suppliers WHERE id = ?");
-$stmt->bind_param("i", $supplier_id);
+// 3) Lookup staff ID
+$stmt = $conn->prepare("SELECT id FROM users WHERE username = ? LIMIT 1");
+$stmt->bind_param("s", $_SESSION['staff_username']);
 $stmt->execute();
-$stmt->bind_result($cost_6kg, $cost_12kg);
+$stmt->bind_result($purchased_by);
 if (!$stmt->fetch()) {
-    die("Supplier not found.");
+    die("User not found.");
 }
 $stmt->close();
 
-// Determine unit cost based on product type and calculate total cost
-$unit_cost = ($product === '6kg') ? $cost_6kg : $cost_12kg;
-$total_cost = $unit_cost * $quantity;
-
-// Check available funds: allocated funds - funds deductions
-$sql_allocated = "SELECT IFNULL(SUM(allocated_amount),0) AS total_allocated FROM procurement_funds";
-$allocated_result = $conn->query($sql_allocated);
-$allocated_data = $allocated_result->fetch_assoc();
-$total_allocated = $allocated_data['total_allocated'];
-
-$sql_used = "SELECT IFNULL(SUM(amount),0) AS total_used FROM funds_deductions";
-$used_result = $conn->query($sql_used);
-$used_data = $used_result->fetch_assoc();
-$total_used = $used_data['total_used'];
-
-$balance = $total_allocated - $total_used;
-if ($balance < $total_cost) {
-    die("Insufficient funds. Available balance: KES " . number_format($balance, 2));
-}
-
-// Optionally validate that the product exists in stock
-$stmt = $conn->prepare("SELECT quantity FROM stock WHERE product = ?");
-$stmt->bind_param("s", $product);
+// 4) Lookup product name
+$stmt = $conn->prepare("SELECT product_name FROM products WHERE product_id = ?");
+$stmt->bind_param("i", $product_id);
 $stmt->execute();
-$stmt->store_result();
-if ($stmt->num_rows !== 1) {
-    die("Product not found in stock.");
+$stmt->bind_result($product_name);
+if (!$stmt->fetch()) {
+    die("Product not found.");
 }
 $stmt->close();
 
-// Update the stock table (increase quantity)
-$stmt = $conn->prepare("UPDATE stock SET quantity = quantity + ? WHERE product = ?");
-$stmt->bind_param("is", $quantity, $product);
-if (!$stmt->execute()) {
-    die("Error updating stock: " . $conn->error);
+// 5) Lookup unit cost from price table
+$stmt = $conn->prepare("
+    SELECT buying_price
+      FROM price
+     WHERE supplier_id = ?
+       AND product_id  = ?
+    LIMIT 1
+");
+$stmt->bind_param("ii", $supplier_id, $product_id);
+$stmt->execute();
+$stmt->bind_result($unit_cost);
+if (!$stmt->fetch()) {
+    die("Price not set for this product/supplier.");
 }
 $stmt->close();
 
-// Record purchase history. Use the staff_id from the session.
-$purchased_by = $_SESSION['staff_id'];
-$stmt = $conn->prepare("INSERT INTO purchase_history (supplier_id, product, quantity, purchased_by) VALUES (?, ?, ?, ?)");
-$stmt->bind_param("isii", $supplier_id, $product, $quantity, $purchased_by);
-if (!$stmt->execute()) {
-    die("Error recording purchase history: " . $conn->error);
+$total_amount = $unit_cost * $quantity;
+
+// 6) Check procurement balance using unified funds table
+$row = $conn->query(
+    "SELECT IFNULL(SUM(funds_in),0) AS sum_alloc, IFNULL(SUM(funds_out),0) AS sum_used FROM funds"
+)->fetch_assoc();
+$allocated = (float) $row['sum_alloc'];
+$used      = (float) $row['sum_used'];
+
+$balance = $allocated - $used;
+if ($balance < $total_amount) {
+    die("Error: Insufficient funds. Balance is KES " 
+        . number_format($balance,2) 
+        . " but this purchase costs KES " 
+        . number_format($total_amount,2));
 }
-$purchase_history_id = $stmt->insert_id;
+
+// 7) Update stock
+$stmt = $conn->prepare(" 
+    UPDATE products 
+       SET quantity = quantity + ? 
+     WHERE product_id = ?
+");
+$stmt->bind_param("ii", $quantity, $product_id);
+if (!$stmt->execute()) {
+    die("Stock update failed: " . $stmt->error);
+}
 $stmt->close();
 
-// Deduct funds by inserting a record in funds_deductions
-$stmt = $conn->prepare("INSERT INTO funds_deductions (purchase_id, amount, note) VALUES (?, ?, ?)");
-$note = "Deduction for purchasing $quantity units of $product at KES " . number_format($unit_cost, 2) . " each.";
-$stmt->bind_param("ids", $purchase_history_id, $total_cost, $note);
+// 8) Insert into purchase_history
+$status = 'completed';
+$stmt = $conn->prepare(" 
+    INSERT INTO purchase_history 
+      (supplier_id, product, quantity, purchased_by, purchase_date, status, total)
+    VALUES (?, ?, ?, ?, NOW(), ?, ?)
+");
+$stmt->bind_param(
+    "isissi", 
+    $supplier_id, 
+    $product_name, 
+    $quantity, 
+    $purchased_by, 
+    $status,
+    $total_amount
+);
 if (!$stmt->execute()) {
-    die("Error recording funds deduction: " . $conn->error);
+    die("Purchase history insert failed: " . $stmt->error);
+}
+$purchase_id = $conn->insert_id;
+$stmt->close();
+
+// 9) Insert deduction into unified funds table
+$note = "Purchase of {$quantity}×{$product_name}";
+$stmt = $conn->prepare(" 
+    INSERT INTO funds 
+      (source_type, funds_in, funds_out, transaction_date, purchased_by, note)
+    VALUES ('deduction', 0.00, ?, NOW(), ?, ?)
+");
+$stmt->bind_param("dss", $total_amount, $purchased_by, $note);
+if (!$stmt->execute()) {
+    die("Funds deduction failed: " . $stmt->error);
 }
 $stmt->close();
 
 $conn->close();
 
-// Redirect back with a success message
-header("Location: /OceanGas/staff/procurement_staff_dashboard.php?message=Purchase+successful");
+// 10) Redirect back to dashboard
+header("Location: purchase_history_reports.php?id=" . $supplier_id);
 exit();
-?>

@@ -1,5 +1,33 @@
 <?php
 session_start();
+require_once 'includes/db.php'; // This file should create and return $conn
+
+// Ensure the customer is logged in
+if (!isset($_SESSION['user_id'])) {
+    header("Location: customer/login.php");
+    exit;
+}
+
+$user_id = $_SESSION['user_id'];
+
+// Retrieve customer billing info from the Customers table
+$query = "SELECT F_name, L_name, Email, Phone_number FROM customers WHERE cust_id = ?";
+$stmt = $conn->prepare($query);
+if (!$stmt) {
+    die("Prepare failed: " . $conn->error);
+}
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$stmt->bind_result($F_name, $L_name, $billing_email, $billing_phone);
+$stmt->fetch();
+$stmt->close();
+$conn->close();
+
+// Combine first and last name for billing name
+$billing_name = $F_name . ' ' . $L_name;
+
+
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -11,6 +39,15 @@ session_start();
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <!-- Bootstrap CSS CDN -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .container { margin-top: 50px; }
+    .section-title { margin-bottom: 20px; font-weight: bold; }
+    /* Additional styling for a modern look */
+    .card { border: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .card-header { background: #007bff; color: #fff; border-top-left-radius: 10px; border-top-right-radius: 10px; }
+    .alert-success { background-color: #d4edda; color: #155724; font-weight: bold; }
+  </style>
 </head>
 <body class="bg-light">
   <!-- Header with Blue Navbar -->
@@ -20,7 +57,8 @@ session_start();
         <img src="images/logo.png" alt="OceanGas Logo" height="50" class="me-2">
         <span class="fw-bold">OceanGas Enterprise</span>
       </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
@@ -37,58 +75,62 @@ session_start();
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-md-10 col-lg-8">
-        <div class="card shadow mb-4">
+        <div class="card mb-4">
+          <div class="card-header text-center">
+            <h2>Billing &amp; Delivery Details</h2>
+          </div>
           <div class="card-body">
-            <h2 class="card-title text-center mb-4">Billing &amp; Delivery Details</h2>
-            <form action="place_order.php" method="POST" id="checkoutForm">
-              <!-- Billing Details -->
+            <form action="place_order.php" method="POST">
+              <!-- Billing Details: Pre-populated with registered info; user can edit if needed -->
               <h4 class="mb-3">Billing Details</h4>
               <div class="mb-3">
-                <label for="firstName" class="form-label">First Name</label>
-                <input type="text" id="firstName" name="firstName" class="form-control" required>
+                <label for="billing_name" class="form-label">Name</label>
+                <input type="text" id="billing_name" name="billing_name" class="form-control" 
+                       value="<?php echo htmlspecialchars($billing_name); ?>" required>
               </div>
               <div class="mb-3">
-                <label for="lastName" class="form-label">Last Name</label>
-                <input type="text" id="lastName" name="lastName" class="form-control" required>
+                <label for="billing_email" class="form-label">Email</label>
+                <input type="email" id="billing_email" name="billing_email" class="form-control" 
+                       value="<?php echo htmlspecialchars($billing_email); ?>" required>
               </div>
               <div class="mb-3">
-                <label for="phoneNumber" class="form-label">Phone Number</label>
-                <input type="tel" id="phoneNumber" name="phoneNumber" class="form-control" required>
+                <label for="billing_phone" class="form-label">Phone Number</label>
+                <input type="tel" id="billing_phone" name="billing_phone" class="form-control" 
+                       value="<?php echo htmlspecialchars($billing_phone); ?>" required>
               </div>
-              <!-- Delivery Details -->
+              
+              <!-- Delivery Details: Only delivery address with a dropdown and optional apartment number -->
               <h4 class="mb-3">Delivery Details</h4>
               <div class="mb-3">
-                <label for="deliveryLocation" class="form-label">Delivery Location</label>
-                <input type="text" id="deliveryLocation" name="deliveryLocation" list="kenyaLocations" class="form-control" required>
-                <datalist id="kenyaLocations">
-                  <option value="Nairobi">
-                  <option value="Mombasa">
-                  <option value="Kisumu">
-                  <option value="Nakuru">
-                  <option value="Eldoret">
-                  <option value="Thika">
-                  <option value="Limuru">
-                  <option value="Machakos">
-                  <option value="Naivasha">
-                  <option value="Nyeri">
-                </datalist>
+                <label for="delivery_address" class="form-label">Delivery Address</label>
+                <select id="delivery_address" name="delivery_address" class="form-select" required>
+                  <option value="">Select your county</option>
+                  <option value="Nairobi">Nairobi</option>
+                  <option value="Mombasa">Mombasa</option>
+                  <option value="Kisumu">Kisumu</option>
+                  <option value="Nakuru">Nakuru</option>
+                  <option value="Eldoret">Eldoret</option>
+                  <option value="Thika">Thika</option>
+                  <option value="Limuru">Limuru</option>
+                  <option value="Machakos">Machakos</option>
+                  <option value="Naivasha">Naivasha</option>
+                  <option value="Nyeri">Nyeri</option>
+                </select>
               </div>
               <div class="mb-3">
                 <label for="apartmentNumber" class="form-label">Apartment/House Number (Optional)</label>
-                <input type="text" id="apartmentNumber" name="apartmentNumber" class="form-control">
+                <input type="text" id="apartmentNumber" name="apartmentNumber" class="form-control" placeholder="Enter apartment/house number">
               </div>
-              <!-- Hidden input to store cart data -->
-              <input type="hidden" name="cartData" id="cartData">
+              
               <!-- Cart Summary -->
               <h4 class="mb-3">Cart Summary</h4>
               <div id="cart-summary" class="border rounded p-3 mb-3"></div>
-              <!-- Additional Info -->
-              <p class="mb-3">
-                Delivery fee of 200/= covers up to 5km. Extra charge incurred beyond 5km. Payment required before delivery.
-              </p>
-              <div class="alert alert-success text-center fw-bold" role="alert">
-                M-PESA ONLY
-              </div>
+              <!-- Hidden input to send cart details -->
+              <input type="hidden" name="cart" id="cartData">
+              
+              <p class="mb-3">Delivery fee of 200/= covers up to 5km. Extra charge incurred beyond 5km. Payment required before delivery.</p>
+              <div class="alert alert-success text-center" role="alert">M-PESA ONLY</div>
+              
               <!-- Place Order Button -->
               <div class="d-grid">
                 <button type="submit" class="btn btn-primary btn-lg">Place Order</button>
@@ -100,55 +142,65 @@ session_start();
     </div>
   </div>
 
-  <!-- Script to load cart summary from localStorage and attach cart data to the form -->
+  <!-- Script to load cart summary from localStorage and set hidden cart data -->
   <script>
-    // Retrieve the cart details from localStorage.
-    let cart = JSON.parse(localStorage.getItem('cart')) || { items: [] };
+  // 1. Retrieve cart (expects each item to have .id, .product, .price, .quantity)
+  let cart = JSON.parse(localStorage.getItem('cart')) || { items: [] };
+  let cartSummary   = document.getElementById('cart-summary');
+  let cartDataInput  = document.getElementById('cartData');
 
-    // Display a summary of the cart.
-    let cartSummary = document.getElementById('cart-summary');
+  // 2. Always POST the full cart JSON (including IDs)
+  cartDataInput.value = JSON.stringify(cart);
 
-    if (cart.items.length > 0) {
-      let itemMap = {};
-      let totalAmount = 0;
+  // 3. If there's something in the cart, build a grouped summary by ID
+  if (cart.items.length > 0) {
+    let itemMap     = {};
+    let totalAmount = 0;
 
-      // Group items by product name
-      cart.items.forEach(item => {
-        if (itemMap[item.product]) {
-          itemMap[item.product].quantity += 1;
-        } else {
-          itemMap[item.product] = {
-            quantity: 1,
-            unitPrice: item.price
-          };
-        }
-      });
+    cart.items.forEach(item => {
+      const id       = item.id;
+      const name     = item.product_name;
+      const price    = parseFloat(item.price);
+      const qty      = item.quantity || 1;
 
-      let summaryHTML = '<ul class="list-group mb-3">';
-      for (let product in itemMap) {
-        let quantity = itemMap[product].quantity;
-        let unitPrice = itemMap[product].unitPrice;
-        let totalPrice = quantity * unitPrice;
-        totalAmount += totalPrice;
-
-        summaryHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">
-                          ${quantity} x ${product}
-                          <span>Ksh ${unitPrice} each</span>
-                        </li>`;
+      if (!itemMap[id]) {
+        // new entry keyed by product_id
+        itemMap[id] = {
+          product_id:   id,
+          product_name: name,
+          unitPrice:    price,
+          quantity:     0,
+          lineTotal:    0
+        };
       }
-      summaryHTML += `</ul>
-                      <h5 class="text-end">Total: Ksh ${totalAmount}</h5>`;
-      cartSummary.innerHTML = summaryHTML;
-    } else {
-      cartSummary.innerHTML = '<p>Your cart is empty.</p>';
-    }
 
-    // Attach the cart JSON to the hidden input before form submission.
-    const checkoutForm = document.getElementById('checkoutForm');
-    checkoutForm.addEventListener('submit', function(event) {
-      document.getElementById('cartData').value = JSON.stringify(cart);
+      // accumulate quantity and line total
+      itemMap[id].quantity += qty;
+      itemMap[id].lineTotal  = itemMap[id].quantity * price;
     });
-  </script>
+
+    // 4. Render as a Bootstrap list-group (or table if you prefer)
+    let summaryHTML = '<ul class="list-group mb-3">';
+    Object.values(itemMap).forEach(entry => {
+      summaryHTML += `
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          ${entry.quantity} × ${entry.product_name}
+          <span>Ksh ${entry.unitPrice.toFixed(2)} each</span>
+        </li>
+      `;
+      totalAmount += entry.lineTotal;
+    });
+    summaryHTML += `</ul>
+      <h5 class="text-end">Total: Ksh ${totalAmount.toFixed(2)}</h5>`;
+
+    cartSummary.innerHTML = summaryHTML;
+
+  } else {
+    cartSummary.innerHTML = '<p>Your cart is empty.</p>';
+  }
+</script>
+
+  
   <!-- Bootstrap JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

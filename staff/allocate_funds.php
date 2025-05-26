@@ -10,12 +10,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $amount = isset($_POST['amount']) ? floatval($_POST['amount']) : 0;
-$note = isset($_POST['note']) ? trim($_POST['note']) : '';
+$note   = isset($_POST['note'])   ? trim($_POST['note'])   : '';
 
 if ($amount <= 0) {
     die("Please enter a valid amount.");
 }
 
+// DB connect
 $host = 'localhost';
 $db   = 'oceangas';
 $user = 'root';
@@ -25,14 +26,22 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-$stmt = $conn->prepare("INSERT INTO procurement_funds (allocated_amount, note) VALUES (?, ?)");
+// Insert into unified funds table as an allocation
+$stmt = $conn->prepare("
+    INSERT INTO funds 
+      (source_type,  funds_in, funds_out, transaction_date, purchased_by, note)
+    VALUES
+      ('allocation',  ?, 0.00, NOW(), NULL, ?)
+");
 $stmt->bind_param("ds", $amount, $note);
-if ($stmt->execute()) {
-    $stmt->close();
-    $conn->close();
-    header("Location: /OceanGas/staff/procurement_dashboard.php?message=Funds+allocated+successfully");
-    exit();
-} else {
-    die("Error allocating funds: " . $conn->error);
+
+if (! $stmt->execute()) {
+    die("Error allocating funds: " . $stmt->error);
 }
-?>
+
+$stmt->close();
+$conn->close();
+
+// Redirect back with success message
+header("Location: /OceanGas/staff/finance.php?message=Funds+allocated+successfully");
+exit();

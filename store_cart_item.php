@@ -13,13 +13,13 @@ if ($conn->connect_error) {
 }
 
 // Check if product and price are set
-if (isset($_POST['product']) && isset($_POST['price'])) {
-    $product = $conn->real_escape_string($_POST['product']);
+if (isset($_POST['product_name']) && isset($_POST['price'])) {
+    $product = $conn->real_escape_string($_POST['product_name']);
     $price = (int)$_POST['price'];
     $session_id = session_id();
 
     // Insert the cart item into the 'cart' table
-    $sql = "INSERT INTO cart (session_id, product, price, quantity) VALUES ('$session_id', '$product', $price, 1)";
+    $sql = "INSERT INTO cart (session_id, product_name, price, quantity) VALUES ('$session_id', '$product', $price, 1)";
     if ($conn->query($sql) === TRUE) {
         echo "Item added to cart in database.";
     } else {

@@ -1,416 +1,455 @@
-<?php
+<?php 
+$current_page = basename($_SERVER['PHP_SELF']);
 session_start();
-// Restrict access to only sales staff
-if (!isset($_SESSION['staff_username']) || $_SESSION['staff_role'] !== 'sales') {
+
+// Ensure sales staff is logged in
+if (!isset($_SESSION['staff_username']) || !isset($_SESSION['staff_role'])) {
     header("Location: /OceanGas/staff/staff_login.php");
-    exit();
+    exit;
 }
 
-require_once $_SERVER['DOCUMENT_ROOT'] . '/OceanGas/includes/db.php';
+$salesName = $_SESSION['staff_username'];
 
-// Process new sales order form submission
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_sale'])) {
-    // Get and sanitize form inputs
-    $order_no = trim($_POST['order_no']);
-    $customer_name = trim($_POST['customer_name']);
-    $contact = trim($_POST['contact']);
-    $delivery_location = trim($_POST['delivery_location']);
-    $apartment_number = trim($_POST['apartment_number']);
-    $qty6 = intval($_POST['qty6']);
-    $qty12 = intval($_POST['qty12']);
-    
-    $assigned_to = $_SESSION['staff_username'];
-    $status = 'Pending';
-    
-    // Assume sample prices for each cylinder type; adjust as needed.
-    $price6 = 100;
-    $price12 = 150;
-    
-    // Insert sales record for 6kg cylinder if quantity > 0
-    if ($qty6 > 0) {
-        $total6 = $qty6 * $price6;
-        $product6 = "6kg Gas Cylinder";
-        $stmt = $conn->prepare("INSERT INTO sales (order_no, customer_name, contact, product, quantity, status, assigned_to, total, sale_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-        $stmt->bind_param("sssisiis", $order_no, $customer_name, $contact, $product6, $qty6, $status, $assigned_to, $total6);
-        $stmt->execute();
-        $stmt->close();
-    }
-    
-    // Insert sales record for 12kg cylinder if quantity > 0
-    if ($qty12 > 0) {
-        $total12 = $qty12 * $price12;
-        $product12 = "12kg Gas Cylinder";
-        $stmt = $conn->prepare("INSERT INTO sales (order_no, customer_name, contact, product, quantity, status, assigned_to, total, sale_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-        $stmt->bind_param("sssisiis", $order_no, $customer_name, $contact, $product12, $qty12, $status, $assigned_to, $total12);
-        $stmt->execute();
-        $stmt->close();
-    }
-    
-    // Remove the order from orders table (order review) if it exists.
-    $stmt = $conn->prepare("DELETE FROM orders WHERE order_no = ?");
-    $stmt->bind_param("s", $order_no);
-    $stmt->execute();
-    $stmt->close();
-    
-    $success = "New sales order created successfully.";
+// Database Connection Details
+$host = 'localhost';
+$db   = 'oceangas';
+$user = 'root';
+$pass = '';
+$conn = new mysqli($host, $user, $pass, $db);
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
 }
 
-// Fetch sales orders for the logged-in sales staff
-$salesQuery = "SELECT * FROM sales WHERE assigned_to = ?";
-$stmt = $conn->prepare($salesQuery);
-$stmt->bind_param("s", $_SESSION['staff_username']);
+// Retrieve Email from users table using a prepared statement
+$stmt = $conn->prepare("SELECT email FROM users WHERE username = ?");
+$stmt->bind_param("s", $salesName);
 $stmt->execute();
-$result = $stmt->get_result();
-
-$salesData = [];
-while ($row = $result->fetch_assoc()) {
-    $salesData[] = $row;
-}
+$stmt->bind_result($emailFromDB);
+$stmt->fetch();
 $stmt->close();
 
-// Calculate summary metrics based on fetched sales orders
-$totalSales = count($salesData);
-$pendingOrders = 0;
-$deliveriesMade = 0;
-foreach ($salesData as $sale) {
-    if ($sale['status'] == 'Pending') {
-        $pendingOrders++;
-    }
-    if ($sale['status'] == 'Approved' || $sale['status'] == 'Delivered') {
-        $deliveriesMade++;
-    }
-}
+// Use the retrieved email or fallback to session or default
+$email = !empty($emailFromDB) ? $emailFromDB : (isset($_SESSION['staff_email']) ? $_SESSION['staff_email'] : 'user@example.com');
+$_SESSION['staff_email'] = $email; // Update the session variable if needed
 
-// Fetch orders from the orders table to populate the "New Orders" section.
-$ordersQuery = "SELECT order_no, first_name, last_name, phone_number, delivery_location, apartment_number, cart_summary FROM orders ORDER BY created_at DESC";
-$ordersResult = $conn->query($ordersQuery);
-$ordersData = [];
-while ($order = $ordersResult->fetch_assoc()) {
-    $ordersData[] = $order;
-}
+// Other profile variables
+$displayName = $salesName;  // Change this if you use a full name field
+$role  = isset($_SESSION['staff_role']) ? $_SESSION['staff_role'] : '';
+$profileImage = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
+
+// --- Cockpit Queries --- //
+
+// New Orders Count
+$result = $conn->query("SELECT COUNT(*) AS new_orders FROM orders WHERE is_new = 1 OR order_status = 'new'");
+$new_orders = ($result && $row = $result->fetch_assoc()) ? $row['new_orders'] : 0;
+
+// Total Products in Stock
+$result = $conn->query("SELECT IFNULL(SUM(quantity), 0) AS total_stock FROM products");
+$total_stock = ($result && $row = $result->fetch_assoc()) ? $row['total_stock'] : 0;
+
+// Pending Sales Count
+$result = $conn->query("SELECT COUNT(*) AS pending_sales FROM orders WHERE order_status = 'pending'");
+$pending_sales = ($result && $row = $result->fetch_assoc()) ? $row['pending_sales'] : 0;
+
+
 $conn->close();
+
+// Dummy data for charts (replace with actual data as needed)
+$lineChartData = [12000, 15000, 13000, 17000, 16000];
+$lineChartLabels = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'];
+$columnChartData = [50, 75, 60, 90, 80];
+$columnChartLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+$topCouponsData = [72, 28];
+$topCouponsLabels = ['Used', 'Remaining'];
+$payingVsNonPayingData = [70, 30];
+$payingVsNonPayingLabels = ['Paying', 'Non-Paying'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sales Staff Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Cockpit - Sales Dashboard | OceanGas Enterprise</title>
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.2/css/dataTables.bootstrap5.min.css">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- jQuery (for DataTables) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- DataTables JS -->
+  <script src="https://cdn.datatables.net/1.13.2/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.2/js/dataTables.bootstrap5.min.js"></script>
   <style>
-    body {
-      background-color: #f8f9fa;
-      font-family: 'Arial', sans-serif;
-    }
-    /* Navbar styling */
-    .navbar-custom {
-      background-color: #6a008a;
-    }
-    .navbar-custom .navbar-brand,
-    .navbar-custom .nav-link {
-      color: #fff !important;
-    }
-    .container { margin-top: 20px; }
-    /* Summary Cards */
-    .summary-card {
-      background: #fff;
-      border-radius: 15px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      padding: 20px;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .summary-card h5 {
-      color: #6a008a;
+      body { 
+          font-family: Arial, sans-serif; 
+          background: #f8f9fa; 
+      }
+      .sidebar { 
+          width: 250px; 
+          background: #6a008a; 
+          color: #fff; 
+          padding: 20px; 
+          position: fixed; 
+          height: 100vh; 
+      }
+      .sidebar a { 
+          color: #fff; 
+          text-decoration: none; 
+          display: block; 
+          padding: 10px; 
+          margin: 5px 0; 
+      }
+      .sidebar a:hover { 
+          background: rgba(255,255,255,0.2); 
+          border-radius: 5px; 
+      }
+      .sidebar a.active {
+      background: rgba(255,255,255,0.3);
       font-weight: bold;
-    }
-    .summary-card p {
-      font-size: 2rem;
-      color: #e74c3c;
-      font-weight: bold;
-    }
-    /* Form Section */
-    .form-section {
-      background: #fff;
-      border-radius: 15px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      padding: 20px;
-      margin-bottom: 30px;
-    }
-    /* Chart Cards */
-    .chart-card {
-      background: #fff;
-      border-radius: 15px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-    /* Table styling */
-    .table-container { margin-top: 30px; }
-    table { background: #fff; width: 100%; border-collapse: collapse; }
-    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
-    th { background-color: #6a008a; color: #fff; }
+      }
+      .content { 
+          margin-left: 260px; 
+          padding: 20px; 
+      }
+      .topbar { 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center; 
+          background: #fff; 
+          padding: 10px 20px; 
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+      }
+      .topbar i { 
+          cursor: pointer; 
+      }
+      .card { 
+          border: none; 
+          box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+          margin-bottom: 20px; 
+      }
+      .dropdown-btn {
+    padding: 10px;
+    width: 100%;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 16px;
+    color: white;
+}
+      /* Container hidden by default */
+.dropdown-container {
+    display: none;
+    background-color:#6a008a;
+    padding-left: 20px;
+}
+
+/* Show container when active */
+.dropdown-btn.active, .dropdown-btn2.active + .dropdown-container {
+    display: block;
+    
+}
+
+/* Optional: hover effect */
+.dropdown-container a {
+    color: white;
+    padding: 8px 0;
+    display: block;
+    text-decoration: none;
+}
+
+.dropdown-container a:hover {
+    background-color:rgba(255,255,255,0.2);
+}
   </style>
 </head>
 <body>
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-custom">
-    <div class="container">
-      <a class="navbar-brand" href="#">Sales Dashboard</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
-              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="/OceanGas/logout.php">Logout</a>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </nav>
+<script>
+  // If we’re inside an iframe, window.self !== window.top
+  if (window.self !== window.top) {
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Remove the sidebar element entirely
+      const sidebar = document.querySelector('.sidebar');
+      if (sidebar) sidebar.remove();
+      
+      const topbar = document.querySelector('.topbar');
+      if (topbar) topbar.remove();
+      // 2. Reset your main content to fill the viewport
+      const content = document.querySelector('.content');
+      if (content) {
+        content.style.marginLeft = '0';
+        content.style.width      = '100%';
+        content.style.padding    = '20px';
+      }
+
+    });
+  }
+</script>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+      <h2>Sales Panel</h2>
+      <a href="/OceanGas/staff/sales_staff_dashboard.php" class="<?php echo ($current_page === 'sales_staff_dashboard.php') ? 'active' : ''; ?>"><i class="fas fa-chart-line"></i> Cockpit</a>
+      <a href="/OceanGas/staff/sales_invoice.php"><i class="fas fa-file-invoice"></i> Sales Invoice</a>
+      <a href="/OceanGas/staff/stock_sales.php"><i class="fas fa-box"></i> Stock/Inventory</a>
+      <a href="/OceanGas/staff/reports.php"><i class="fas fa-clipboard-list"></i> Reports</a>
+      <div class="dropdown">
+    <button class="dropdown-btn">
+     <i class="fas fa-truck"></i>
+     <span>Deliveries</span>
+     <i class="fas fa-caret-down ms-auto"></i>
+    </button>
+<div class="dropdown-container">
+  <a href="add_delivery_sales.php">Add Delivery</a>
+  <a href="view_deliveries_sales.php">View Deliveries</a>
+</div>
+</div>
+      
+  </div>
   
   <!-- Main Content -->
-  <div class="container">
-    <!-- Summary Cards -->
-    <div class="row">
-      <div class="col-md-4">
-        <div class="summary-card">
-          <h5>Total Sales Orders</h5>
-          <p><?php echo $totalSales; ?></p>
-        </div>
+  <div class="content">
+      <!-- Topbar -->
+      <div class="topbar mb-4">
+          <h1 class="m-0">Welcome, <?php echo htmlspecialchars($salesName); ?></h1>
+          <div class="d-flex align-items-center">
+              <i class="fas fa-envelope me-3"></i>
+              <i class="fas fa-bell me-3"></i>
+              <!-- Profile Icon Dropdown -->
+              <div class="dropdown">
+                <a href="#" 
+                   class="dropdown-toggle d-flex align-items-center text-dark text-decoration-none" 
+                   id="profileDropdown" 
+                   data-bs-toggle="dropdown" 
+                   aria-expanded="false">
+                  <img src="<?php echo htmlspecialchars($profileImage); ?>" 
+                       alt="Profile" class="rounded-circle" width="23" height="23">
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown" style="min-width: 250px;">
+                  <li class="dropdown-header text-center">
+                    <img src="<?php echo htmlspecialchars($profileImage); ?>" 
+                         alt="Profile" class="rounded-circle mb-2" width="60" height="60">
+                    <p class="m-0 fw-bold"><?php echo htmlspecialchars($displayName); ?></p>
+                    <small class="text-muted"><?php echo htmlspecialchars($email); ?></small><br>
+                    <?php if (!empty($role)): ?>
+                      <small class="text-muted"><?php echo htmlspecialchars($role); ?></small>
+                    <?php endif; ?>
+                  </li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                    <a class="dropdown-item" href="#" 
+                       data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                      Profile
+                    </a>
+                  </li>
+                  <li><a class="dropdown-item" href="#">Dashboard</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                    <a class="dropdown-item text-danger" href="/OceanGas/logout.php">
+                      <i class="fas fa-sign-out-alt"></i> Sign Out
+                    </a>
+                  </li>
+                </ul>
+              </div>
+          </div>
       </div>
-      <div class="col-md-4">
-        <div class="summary-card">
-          <h5>Pending Orders</h5>
-          <p><?php echo $pendingOrders; ?></p>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="summary-card">
-          <h5>Deliveries Made</h5>
-          <p><?php echo $deliveriesMade; ?></p>
-        </div>
-      </div>
-    </div>
-    
-    <!-- New Sales Order Form -->
-    <div class="form-section">
-      <h4>Create New Sales Order</h4>
-      <?php if (isset($success)): ?>
-        <div class="alert alert-success"><?php echo $success; ?></div>
-      <?php elseif (isset($error)): ?>
-        <div class="alert alert-danger"><?php echo $error; ?></div>
-      <?php endif; ?>
-      <form action="" method="POST">
-        <div class="row mb-3">
-          <div class="col-md-3">
-            <label for="order_no" class="form-label">Order No.</label>
-            <input type="text" name="order_no" id="order_no" class="form-control" required>
-          </div>
-          <div class="col-md-3">
-            <label for="customer_name" class="form-label">Customer Name</label>
-            <input type="text" name="customer_name" id="customer_name" class="form-control" required>
-          </div>
-          <div class="col-md-3">
-            <label for="contact" class="form-label">Phone Number</label>
-            <input type="text" name="contact" id="contact" class="form-control" required>
-          </div>
-          <div class="col-md-3">
-            <label for="delivery_location" class="form-label">Delivery Location</label>
-            <input type="text" name="delivery_location" id="delivery_location" class="form-control" required>
-          </div>
-        </div>
-        <div class="row mb-3">
-          <div class="col-md-3">
-            <label for="apartment_number" class="form-label">Apartment/House No.</label>
-            <input type="text" name="apartment_number" id="apartment_number" class="form-control" required>
-          </div>
-          <!-- Order Items Section -->
-          <div class="col-md-3">
-            <label for="qty6" class="form-label">6kg Cylinders</label>
-            <input type="number" name="qty6" id="qty6" class="form-control" min="0" value="0">
-          </div>
-          <div class="col-md-3">
-            <label for="qty12" class="form-label">12kg Cylinders</label>
-            <input type="number" name="qty12" id="qty12" class="form-control" min="0" value="0">
-          </div>
-        </div>
-        <button type="submit" name="create_sale" class="btn btn-primary">Create Sales Order</button>
-      </form>
-    </div>
-    
-    <!-- Orders from Orders Table Section -->
-    <div class="table-container">
-      <h4>Orders Overview</h4>
-      <table class="table table-bordered table-striped">
-        <thead>
-          <tr>
-            <th>Order No.</th>
-            <th>Customer Name</th>
-            <th>Phone Number</th>
-            <th>Delivery Location</th>
-            <th>Apartment/House No.</th>
-            <th>Order Items</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php if(!empty($ordersData)): ?>
-            <?php foreach ($ordersData as $order): ?>
-              <tr>
-                <td><?php echo htmlspecialchars($order['order_no']); ?></td>
-                <td><?php echo htmlspecialchars($order['first_name'] . ' ' . $order['last_name']); ?></td>
-                <td><?php echo htmlspecialchars($order['phone_number']); ?></td>
-                <td><?php echo htmlspecialchars($order['delivery_location']); ?></td>
-                <td><?php echo htmlspecialchars($order['apartment_number']); ?></td>
-                <td>
-                  <?php 
-                    // Decode the cart summary JSON and display the items as a list.
-                    $cartItems = json_decode($order['cart_summary'], true);
-                    if (!empty($cartItems['items'])) {
-                        echo "<ul>";
-                        // Group items by product name.
-                        $grouped = [];
-                        foreach ($cartItems['items'] as $item) {
-                            $name = htmlspecialchars($item['product']);
-                            if(isset($grouped[$name])){
-                                $grouped[$name]++;
-                            } else {
-                                $grouped[$name] = 1;
-                            }
-                        }
-                        foreach($grouped as $product => $qty){
-                            echo "<li>$qty x $product</li>";
-                        }
-                        echo "</ul>";
-                    } else {
-                        echo "No items";
-                    }
-                  ?>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-          <?php else: ?>
-            <tr><td colspan="6" class="text-center">No orders found.</td></tr>
-          <?php endif; ?>
-        </tbody>
-      </table>
-    </div>
-    
-    <!-- Charts Section -->
-    <div class="row charts-container">
-      <div class="col-md-6">
-        <div class="chart-card">
-          <h5 class="text-center">Sales Trends</h5>
-          <canvas id="salesTrendChart"></canvas>
-        </div>
-      </div>
-      <div class="col-md-6">
-        <div class="chart-card">
-          <h5 class="text-center">Product Distribution</h5>
-          <canvas id="salesDistributionChart"></canvas>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Detailed Sales Report Table -->
-    <div class="table-container">
-      <h4>Sales Report</h4>
-      <table class="table table-bordered table-striped">
-        <thead>
-          <tr>
-            <th>Order Number</th>
-            <th>Customer Name</th>
-            <th>Contact</th>
-            <th>Product</th>
-            <th>Quantity</th>
-            <th>Status</th>
-            <th>Total</th>
-            <th>Sale Date</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php foreach ($salesData as $sale): ?>
-          <tr>
-            <td><?php echo htmlspecialchars($sale['order_no']); ?></td>
-            <td><?php echo htmlspecialchars($sale['customer_name']); ?></td>
-            <td><?php echo htmlspecialchars($sale['contact']); ?></td>
-            <td><?php echo htmlspecialchars($sale['product']); ?></td>
-            <td><?php echo htmlspecialchars($sale['quantity']); ?></td>
-            <td><?php echo htmlspecialchars($sale['status']); ?></td>
-            <td><?php echo htmlspecialchars($sale['total']); ?></td>
-            <td><?php echo htmlspecialchars($sale['sale_date']); ?></td>
-            <td>
-              <?php if ($sale['status'] == 'Pending'): ?>
-                <a href="approve_sale.php?sale_id=<?php echo $sale['id']; ?>" class="btn btn-success btn-sm">Approve</a>
-              <?php else: ?>
-                <button class="btn btn-secondary btn-sm" disabled>Approved</button>
-              <?php endif; ?>
-            </td>
-          </tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Chart.js Scripts -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Sales Trends Chart: Combined Line & Bar Chart
-      const salesTrendCtx = document.getElementById('salesTrendChart').getContext('2d');
-      new Chart(salesTrendCtx, {
-        type: 'bar',
-        data: {
-          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-          datasets: [
-            {
-              type: 'line',
-              label: '6kg Cylinders',
-              data: [50, 60, 55, 70, 65, 80],
-              borderColor: '#3498db',
-              fill: false,
-              tension: 0.4
-            },
-            {
-              type: 'bar',
-              label: '12kg Cylinders',
-              data: [30, 40, 35, 50, 45, 60],
-              backgroundColor: '#e74c3c'
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: 'top' } }
-        }
-      });
       
-      // Sales Distribution Pie Chart
-      const salesDistributionCtx = document.getElementById('salesDistributionChart').getContext('2d');
-      new Chart(salesDistributionCtx, {
-        type: 'pie',
-        data: {
-          labels: ['6kg Cylinders', '12kg Cylinders'],
-          datasets: [{
-            data: [200, 150],
-            backgroundColor: ['#f39c12', '#27ae60']
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: 'bottom' } }
-        }
-      });
-    });
-  </script>
+      <!-- KPI Cards Section -->
+      <div class="row">
+          <!-- New Orders (Clickable Card) -->
+          <div class="col-md-3">
+              <a href="/OceanGas/staff/new_orders.php" style="text-decoration: none; color: inherit;">
+                <div class="card p-3 text-center shadow-sm">
+                  <h5>New Orders</h5>
+                  <p class="display-6"><?php echo number_format($new_orders); ?></p>
+                </div>
+              </a>
+          </div>
+          <!-- Total Products in Stock -->
+          <div class="col-md-3">
+              <div class="card p-3 text-center shadow-sm">
+                  <h5>Total Products in Stock</h5>
+                  <p class="display-6"><?php echo number_format($total_stock); ?></p>
+              </div>
+          </div>
+          <!-- Pending Sales (Clickable Card) -->
+          <div class="col-md-3">
+              <a href="/OceanGas/staff/pending_sales.php" style="text-decoration: none; color: inherit;">
+                <div class="card p-3 text-center shadow-sm">
+                  <h5>Pending Sales</h5>
+                  <p class="display-6"><?php echo number_format($pending_sales); ?></p>
+                </div>
+              </a>
+          </div>
+      </div>
+      
+      <!-- KPI Charts Section -->
+      <div class="row mt-4">
+          <!-- Total Sells (Line Chart) -->
+          <div class="col-md-6">
+              <div class="card p-3">
+                  <h5>Total Sells</h5>
+                  <canvas id="totalSellsLineChart"></canvas>
+              </div>
+          </div>
+          <!-- Total Orders (Column Chart) -->
+          <div class="col-md-6">
+              <div class="card p-3">
+                  <h5>Total Orders</h5>
+                  <canvas id="totalOrdersColumnChart"></canvas>
+              </div>
+          </div>
+      </div>
+      
+
+      
+  </div> <!-- End .content -->
+  
+  <!-- Edit Profile Modal -->
+  <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+          <div class="modal-content">
+              <form id="editProfileForm">
+                  <div class="modal-header">
+                      <h5 class="modal-title" id="editProfileModalLabel">Edit Profile</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                      <div class="mb-3">
+                          <label for="editName" class="form-label">Name</label>
+                          <input type="text" class="form-control" id="editName" name="name" value="<?php echo htmlspecialchars($displayName); ?>" required>
+                      </div>
+                      <div class="mb-3">
+                          <label for="editEmail" class="form-label">Email</label>
+                          <input type="email" class="form-control" id="editEmail" name="email" value="<?php echo htmlspecialchars($email); ?>" required>
+                      </div>
+                      <div class="mb-3">
+                          <label for="editRole" class="form-label">Role</label>
+                          <input type="text" class="form-control" id="editRole" name="role" value="<?php echo htmlspecialchars($role); ?>" readonly>
+                      </div>
+                      <div class="mb-3">
+                          <label for="editPassword" class="form-label">New Password</label>
+                          <input type="password" class="form-control" id="editPassword" name="password">
+                          <small class="text-muted">Leave blank to keep current password.</small>
+                      </div>
+                  </div>
+                  <div class="modal-footer">
+                      <span id="updateStatus" class="me-auto text-success small"></span>
+                      <button type="submit" class="btn btn-primary">Save changes</button>
+                  </div>
+              </form>
+          </div>
+      </div>
+  </div>
   
   <!-- Bootstrap 5 JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Plugin for Center Text in Doughnut Charts -->
+  <script>
+    const centerTextPlugin = {
+      id: 'centerTextPlugin',
+      afterDraw(chart, args, options) {
+        if (!options.text) return;
+        const { ctx, chartArea: { width, height } } = chart;
+        ctx.save();
+        ctx.font = options.font || 'bold 24px sans-serif';
+        ctx.fillStyle = options.color || '#333';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(options.text, width / 2, height / 2);
+        ctx.restore();
+      }
+    };
+    Chart.register(centerTextPlugin);
+
+  
+
+      document.addEventListener('DOMContentLoaded', function() {
+          const totalSellsCtx = document.getElementById('totalSellsLineChart').getContext('2d');
+          new Chart(totalSellsCtx, {
+              type: 'line',
+              data: {
+                  labels: <?php echo json_encode($lineChartLabels); ?>,
+                  datasets: [{
+                      label: 'Total Sells',
+                      data: <?php echo json_encode($lineChartData); ?>,
+                      borderColor: '#4e73df',
+                      fill: false,
+                      tension: 0.1
+                  }]
+              },
+              options: { responsive: true }
+          });
+
+          const totalOrdersCtx = document.getElementById('totalOrdersColumnChart').getContext('2d');
+          new Chart(totalOrdersCtx, {
+              type: 'bar',
+              data: {
+                  labels: <?php echo json_encode($columnChartLabels); ?>,
+                  datasets: [{
+                      label: 'Total Orders',
+                      data: <?php echo json_encode($columnChartData); ?>,
+                      backgroundColor: '#1cc88a'
+                  }]
+              },
+              options: { responsive: true }
+          });
+
+          $('#reviewsTable').DataTable({
+              paging: false,
+              searching: false,
+              info: false,
+              language: {
+                  emptyTable: "No reviews found."
+              }
+          });
+      });
+
+  function fetchNewOrdersCount() {
+      fetch('/OceanGas/staff/get_new_orders.php')
+          .then(response => response.json())
+          .then(data => {
+              document.querySelector('.row .col-md-3 .card p.display-6').innerText = data.new_orders;
+          })
+          .catch(err => console.error("Error fetching new orders:", err));
+  }
+  setInterval(fetchNewOrdersCount, 10000);
+  fetchNewOrdersCount();
+
+  document.getElementById('editProfileForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      fetch('update_profile.php', {
+          method: 'POST',
+          body: formData
+      })
+      .then(response => response.text())
+      .then(result => {
+          document.getElementById('updateStatus').textContent = result;
+          setTimeout(() => location.reload(), 1000);
+      })
+      .catch(error => {
+          document.getElementById('updateStatus').textContent = "Update failed!";
+      });
+  });
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.dropdown-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.classList.toggle('active');
+        const container = btn.nextElementSibling;
+        container.style.display = container.style.display === 'block'
+          ? 'none'
+          : 'block';
+      });
+    });
+  });
+  </script>
+  
 </body>
 </html>
