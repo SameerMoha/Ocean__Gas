@@ -29,8 +29,7 @@
     .sidebar a:hover, .sidebar a.active {
       background: rgba(255,255,255,0.2);
       border-radius: 5px;
-                  font-weight: bold;
-
+      font-weight: bold;
     }
     .dropdown-btn {
       background: none;
@@ -110,21 +109,21 @@
   
 <div class="sidebar"> 
     <h2>Sales Panel</h2>
-      <a href="/OceanGas/staff/sales_staff_dashboard.php" class="<?php echo ($current_page === 'sales_staff_dashboard.php') ? 'active' : ''; ?>"><i class="fas fa-chart-line"></i> Cockpit</a>
-      <a href="/OceanGas/staff/sales_invoice.php"><i class="fas fa-file-invoice"></i> Sales Invoice</a>
-      <a href="/OceanGas/staff/stock_sales.php"><i class="fas fa-box"></i> Stock/Inventory</a>
-      <a href="/OceanGas/staff/reports.php"><i class="fas fa-clipboard-list"></i> Reports</a>
-      <div class="dropdown">
-    <button class="dropdown-btn">
-     <i class="fas fa-truck"></i>
-     <span>Deliveries</span>
-     <i class="fas fa-caret-down ms-auto"></i>
-    </button>
-<div class="dropdown-container">
-  <a href="add_delivery_sales.php">Add Delivery</a>
-  <a href="view_deliveries_sales.php"class="active">View Deliveries</a>
-</div>
-</div>    
+    <a href="/OceanGas/staff/sales_staff_dashboard.php" class="<?php echo ($current_page === 'sales_staff_dashboard.php') ? 'active' : ''; ?>"><i class="fas fa-chart-line"></i> Cockpit</a>
+    <a href="/OceanGas/staff/sales_invoice.php"><i class="fas fa-file-invoice"></i> Sales Invoice</a>
+    <a href="/OceanGas/staff/stock_sales.php"><i class="fas fa-box"></i> Stock/Inventory</a>
+    <a href="/OceanGas/staff/reports.php"><i class="fas fa-clipboard-list"></i> Reports</a>
+    <div class="dropdown">
+        <button class="dropdown-btn">
+            <i class="fas fa-truck"></i>
+            <span>Deliveries</span>
+            <i class="fas fa-caret-down ms-auto"></i>
+        </button>
+        <div class="dropdown-container">
+            <a href="add_delivery_sales.php">Add Delivery</a>
+            <a href="view_deliveries_sales.php" class="active">View Deliveries</a>
+        </div>
+    </div>    
 </div>
 
   <div class="content">
@@ -177,8 +176,8 @@
     $date_to = isset($_GET['date_to']) ? $_GET['date_to'] : '';
     $search_query = isset($_GET['search']) ? $_GET['search'] : '';
 
-    // Build query with filters
-    $sql = "SELECT d.*, o.invoice_summary, o.delivery_info
+    // Build query with filters - Updated to include order_number
+    $sql = "SELECT d.*, o.invoice_summary, o.delivery_info, o.order_number
             FROM deliveries d
             LEFT JOIN orders o ON d.order_id = o.order_id
             WHERE 1=1"; // 1=1 is always true, allows us to conditionally append filters
@@ -211,13 +210,14 @@
     }
 
     if (!empty($search_query)) {
-        $sql .= " AND (d.order_id LIKE ? OR d.assigned_to LIKE ? OR d.notes LIKE ? OR o.invoice_summary LIKE ?)";
+        $sql .= " AND (d.order_id LIKE ? OR d.assigned_to LIKE ? OR d.notes LIKE ? OR o.invoice_summary LIKE ? OR o.order_number LIKE ?)";
         $search_param = "%" . $search_query . "%";
         $params[] = $search_param;
         $params[] = $search_param;
         $params[] = $search_param;
         $params[] = $search_param;
-        $types .= "ssss";
+        $params[] = $search_param;
+        $types .= "sssss";
     }
 
     $sql .= " ORDER BY d.delivery_date DESC";
@@ -291,10 +291,10 @@
             <button type="submit" class="btn btn-primary">
               <i class="fas fa-filter"></i> Apply Filters
             </button>
-            <a href="view_deliveries.php" class="btn btn-secondary">
+            <a href="view_deliveries_sales.php" class="btn btn-secondary">
               <i class="fas fa-times"></i> Clear Filters
             </a>
-            <a href="add_delivery.php" class="btn btn-success">
+            <a href="add_delivery_sales.php" class="btn btn-success">
               <i class="fas fa-plus"></i> Add New Delivery
             </a>
             
@@ -322,7 +322,7 @@
             <thead class="table-dark">
               <tr>
                 <th>Delivery ID</th>
-                <th>Order ID</th>
+                <th>Order Number</th>
                 <th>Order Details</th>
                 <th>Delivery Location</th>
                 <th>Assigned To</th>
@@ -357,7 +357,7 @@
             ?>
               <tr>
                 <td><?= htmlspecialchars($row['delivery_id']) ?></td>
-                <td><?= htmlspecialchars($row['order_id']) ?></td>
+                <td><?= htmlspecialchars($row['order_number'] ?? 'N/A') ?></td>
                 <td><?= htmlspecialchars($row['invoice_summary'] ?? 'N/A') ?></td>
                 <td><?= htmlspecialchars($delivery_address) ?></td>
                 <td><?= htmlspecialchars($row['assigned_to']) ?></td>
@@ -651,7 +651,7 @@
       var header = `
         <div class="header">
           <div>
-            <h1>OceanGas Delivery Report</h1>
+            <h1>OceanGas Sales Delivery Report</h1>
             <p>Generated on: ${dateString} at ${timeString}</p>
           </div>
         </div>
@@ -678,7 +678,7 @@
         <!DOCTYPE html>
         <html>
           <head>
-            <title>OceanGas Delivery Report</title>
+            <title>OceanGas Sales Delivery Report</title>
             ${style}
           </head>
           <body>

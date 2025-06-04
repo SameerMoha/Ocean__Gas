@@ -168,9 +168,7 @@ WHERE DATE(ph.purchase_date) = '$safe_day'
 ORDER BY ph.purchase_date";
 
 $result_exp = $conn->query($query_exp);
-while ($row = $result_exp->fetch_assoc()) {
-    $monthlyData[$row['month']]['expense'] = (float)$row['expense'];
-}
+
 
 $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 foreach ($months as $m) {
@@ -700,22 +698,7 @@ new Chart(ctxLine, {
       });
     });
   });
-  function loadFrame(url) {
-    const frame = document.getElementById('mainFrame');
-    if (frame.src !== url) {
-      frame.src = url;
-    }
-    frame.style.display = 'block';
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('a[data-target="main-frame"]').forEach(link => {
-      link.addEventListener('click', e => {
-        e.preventDefault();
-        loadFrame(link.href);
-      });
-    });
-  });
+  
     </script>
 </body>
 </html>

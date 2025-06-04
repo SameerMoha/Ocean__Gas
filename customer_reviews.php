@@ -12,7 +12,7 @@ $custId = $_SESSION['user_id'];
 $currentPage = basename($_SERVER['PHP_SELF']);
 function isActive($page) {
     global $currentPage;
-    return $currentPage === $page ? 'active' : '';
+    return $currentPage === $page ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50';
 }
 
 // Database connection
@@ -71,19 +71,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_review'])) {
 }
 
 ?>
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Inquiries</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <title>My Reviews</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
-    .navbar {
+     .navbar {
       background: #0066cc;
       padding: 1rem 3rem;
       position: sticky;
@@ -128,20 +127,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_review'])) {
     }
     .cart-icon span {position: absolute;top: -0.25rem;right: -0.25rem;background-color: #f56565;color: white;border-radius: 9999px;font-size: 0.7rem;width: 1.25rem;height: 1.25rem;
       display: flex; align-items: center; justify-content: center; } 
-    body { background: #f5f5f5; }
-    .sidebar { background: #fff; border-right: 1px solid #dee2e6; padding: 1rem; height: 1000px; }
-    .sidebar .nav-link { color: #333; margin-bottom: .5rem; }
-    .sidebar .nav-link.active { background: #e9ecef; font-weight: bold; }
-    .content { padding: 2rem; }
-    .card-section { margin-bottom: 1.5rem; }
-    .card-section .card { border: none; border-radius: .25rem; }
-    .card-section .card-header { background: #f8f9fa; font-weight: bold; }
-    .navbar .profile-text{
+       .navbar .profile-text{
       font-size: 1.2rem;
       color: white;
       margin-right: 10px;
     }
-    .table-container {
+        .table-container {
       overflow-x: auto;
       background: #fff;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -218,8 +209,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_review'])) {
 
   </style>
 </head>
-<body>
-    <!-- Navbar -->
+<body class="bg-gray-50 font-sans text-gray-800">
+  <!-- Navbar -->
+   <!-- Navbar -->
   <nav class="navbar">
     <div class="container mx-auto flex items-center">
       <img src="assets/images/Oceangas.png" alt="Logo"/>
@@ -254,26 +246,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_review'])) {
     </div>
   </nav>
 
-  <div class="container-fluid">
-    <div class="row">
-      <nav class="col-md-3 sidebar">
-        <h5><i class="fas fa-user-circle me-2"></i>My Account</h5>
-        <div class="nav flex-column mt-3">
-          <a class="nav-link <?php echo isActive('customer_acc.php'); ?>" href="customer_acc.php">Account Overview</a>
-          <a class="nav-link <?php echo isActive('customer_orders.php'); ?>" href="customer_orders.php">Orders</a>
-          <hr>
-          <a class="nav-link <?php echo isActive('customer_address.php'); ?>" href="customer_address.php">Address Book</a>
-          <a class="nav-link <?php echo isActive('customer_inquiries.php'); ?>" href="customer_inquiries.php">Inquiries</a>
-          <a class="nav-link <?php echo isActive('customer_reviews.php'); ?>" href="customer_reviews.php">Reviews</a>
-          <a class="nav-link text-danger" href="/OceanGas/customer/logout.php">Sign Out</a>
-          <a href="shop.php" class="btn btn-primary btn-sm active" role="button" aria-pressed="true">Back to shop</a>
-          </div>
-      </nav>
-      <main class="col-md-9 content">
+  <div class="flex">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white shadow-md h-screen sticky top-0 overflow-y-auto">
+      <div class="p-6">
+        <h5 class="text-xl font-semibold flex items-center mb-4"><i class="fas fa-user-circle mr-2"></i>My Account</h5>
+        <nav class="space-y-2">
+          <a href="customer_acc.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_acc.php') ?> transition-all duration-150"><i class="fas fa-user-circle mr-2"></i>Account Overview</a>
+          <a href="customer_orders.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_orders.php') ?> transition-all duration-150"><i class="fas fa-shopping-cart mr-2"></i>Orders</a>
+          <hr class="my-2 border-black-200">
+          <a href="customer_address.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_address.php') ?> transition-all duration-150"><i class="fas fa-address-book mr-2"></i>Address Book</a>
+          <a href="customer_inquiries.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_inquiries.php') ?> transition-all duration-150"><i class="fas fa-question-circle mr-2"></i>Inquiries</a>
+          <a href="customer_reviews.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_reviews.php') ?> transition-all duration-150"><i class="fas fa-star mr-2"></i>Reviews</a>
+          <a href="customer/logout.php" class="block px-4 py-2 mt-4 text-red-600 hover:bg-red-50 rounded-md transition-colors duration-150">Sign Out</a>
+          <a href="shop.php" class="inline-block mt-4 w-full text-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-150">Back to shop</a>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-8">
+      <header class="mb-6 flex justify-between items-center">
+        <h2 class="text-2xl font-semibold">Rate a product</h2>
+      </header>
+
+<main class="col-md-9 content">
       <div class="row card-section">
-      <div class="card shadow-sm">
-      <div class="card-header">Rate a product</div>
-      <p class="mb-1"></p>
+   
 
       <?php if (!empty($successMsg)): ?>
     <div class="alert alert-success"><?= $successMsg ?></div>

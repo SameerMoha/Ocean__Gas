@@ -11,10 +11,7 @@ if (!isset($_SESSION['staff_username'])) {
 }
 
 // Query the stock table for inventory details + the image_path
-$query = "
-  SELECT * FROM products
-  ORDER By product_id 
-";
+$query = "SELECT * FROM products ORDER BY product_id";
 $result = $conn->query($query);
 if (!$result) {
     die("Query error: " . $conn->error);
@@ -22,7 +19,7 @@ if (!$result) {
 
 // Base URL & filesystem prefix for image checks
 $baseUrl  = '/OceanGas/';
-$fsPrefix = $_SERVER['DOCUMENT_ROOT'] . '/OceanGas/';  // e.g. C:\xampp\htdocs\OceanGas\
+$fsPrefix = $_SERVER['DOCUMENT_ROOT'] . '/OceanGas/';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -30,99 +27,23 @@ $fsPrefix = $_SERVER['DOCUMENT_ROOT'] . '/OceanGas/';  // e.g. C:\xampp\htdocs\O
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stock / Inventory</title>
-  <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap5.min.css">
   <style>
-    /* General Body Styles */
-    body {
-      background-color: #f8f9fa;
-      font-family: 'Arial', sans-serif;
-      margin: 0;
-    }
-    /* Flex container to hold sidebar and main content */
-    .d-flex {
-      min-height: 100vh;
-    }
-    /* Sidebar styles */
-    .sidebar {
-      width: 250px;
-      background: #6a008a;
-      color: white;
-      padding: 20px;
-      height: 100vh; /* Full height */
-      position: sticky;
-      top: 0; /* Stick to the top */
-      overflow-y: auto; /* Allows scrolling if content is too long */
-    }
-    .sidebar h2 {
-      margin-top: 0;
-    }
-    .sidebar a {
-      color: white;
-      text-decoration: none;
-      display: block;
-      padding: 10px;
-      margin: 5px 0;
-      border-radius: 5px;
-    }
-    .sidebar a:hover {
-      background: rgba(255, 255, 255, 0.2);
-    }
-    /* Highlight the active page */
-    .sidebar a.active {
-      background: rgba(255,255,255,0.3);
-      font-weight: bold;
-    }
-    /* Main content wrapper */
-    .content-wrapper {
-      margin-left: 200px;
-            padding: 20px;
-            flex-grow: 1;
-    }
-    /* Inventory card styles */
-    .card {
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-      border: none;
-      border-radius: 15px;
-      transition: transform 0.2s;
-    }
-    .card:hover {
-      transform: scale(1.02);
-    }
-    .card-img-top {
-      height: 250px;
-      object-fit: contain;
-    }
-    .card-title {
-      color: #6a008a;
-      font-weight: bold;
-      font-size: 1.5rem;
-    }
-    .available-stock {
-      font-size: 1.2rem;
-      color: #333;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-    .stock-number {
-      font-size: 2rem;
-      color: #e74c3c;
-      font-weight: bold;
-    }
-    .product-details {
-      font-size: 1rem;
-      color: #555;
-    }
-    .back-btn {
-      margin: 20px 0;
-      background-color: #6a008a;
-      color: white;
-      border: none;
-    }
-  
+    body { background-color: #f8f9fa; font-family: 'Arial', sans-serif; }
+    .sidebar { width: 250px; background: #6a008a; color: white; padding: 20px; height: 100vh; position: fixed; top: 0; left: 0; overflow-y: auto; }
+    .sidebar a { color: white; text-decoration: none; display: block; padding: 10px; margin: 5px 0; border-radius: 5px; }
+    .sidebar a:hover { background: rgba(255, 255, 255, 0.2); }
+    .sidebar a.active { background: rgba(255,255,255,0.3); font-weight: bold; }
+    .content {  padding: 20px; }
+    .table th, .table td { vertical-align: middle; }
+    .table img { height: 60px; width: auto; object-fit: contain; display: block; margin: auto; }
+    .sidebar .dropdown-menu {
+    background-color: #6a008a;
+    border: none;
+}
 .sidebar .dropdown-menu .dropdown-item {
     color: black;
 }
@@ -164,28 +85,18 @@ $fsPrefix = $_SERVER['DOCUMENT_ROOT'] . '/OceanGas/';  // e.g. C:\xampp\htdocs\O
 .dropdown-container a:hover {
     background-color:rgba(255,255,255,0.2);
 }
-.content {
-            margin-left: 260px;
-            padding: 20px;
-            flex-grow: 1;
-        }
+
   </style>
 </head>
 <body>
-  <!-- Flex container for sidebar and main content -->
-  <div class="d-flex">
-    <!-- Sidebar -->
-    <div class="sidebar">
-      <h2>Admin Panel</h2>
-      <a href="/OceanGas/staff/admin_dashboard.php" class="<?php echo ($current_page === 'admin_dashboard.php') ? 'active' : ''; ?>">
-        <i class="fas fa-tachometer-alt"></i> Dashboard
-      </a>
-      <a href="/OceanGas/staff/stock_admin.php" class="<?php echo ($current_page === 'stock_admin.php') ? 'active' : ''; ?>">
-        <i class="fas fa-box"></i> Stock/Inventory
-      </a>
-      <a href="/OceanGas/staff/users.php"><i class="fas fa-users"></i> Manage Users</a>
-      <a href="/OceanGas/staff/finance.php"><i class="fas fa-dollar"></i> Finance</a>
-      <div class="dropdown">
+<div class="d-flex">
+  <div class="sidebar"> 
+    <h2>Admin Panel</h2>
+    <a href="/OceanGas/staff/admin_dashboard.php" class="<?php echo ($current_page === 'admin_dashboard.php') ? 'active' : ''; ?>"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+    <a href="/OceanGas/staff/stock_admin.php"class="<?php echo ($current_page === 'stock_admin.php') ? 'active' : ''; ?>"><i class="fas fa-box"></i> Stock/Inventory</a>
+    <a href="/OceanGas/staff/users.php"><i class="fas fa-users"></i> Manage Users</a>
+    <a href="/OceanGas/staff/finance.php"><i class="fas fa-dollar-sign"></i> Finance</a>
+<div class="dropdown">
     <button class="dropdown-btn">
   <i class="fas fa-truck"></i>
   <span>Deliveries</span>
@@ -197,7 +108,7 @@ $fsPrefix = $_SERVER['DOCUMENT_ROOT'] . '/OceanGas/';  // e.g. C:\xampp\htdocs\O
 </div>
 
             </div>
-      <div class="dropdown">
+    <div class="dropdown">
     <button class="dropdown-btn" id="btnProcurement">
         <i class="fas fa-truck"></i> Procurement <i class="fas fa-caret-down"></i>
     </button>
@@ -269,59 +180,118 @@ $fsPrefix = $_SERVER['DOCUMENT_ROOT'] . '/OceanGas/';  // e.g. C:\xampp\htdocs\O
 
         </div>
     </div>
-   
+    
+    
         </div>
+  
+</div>
 
-    <div class="content" style="margin-left: 1px; padding: 10px; width: calc(100% - 250px);">
+<div class="content" style="margin-left: 250px; padding: 20px; width: calc(100% - 250px);">
 <iframe 
   id="mainFrame"
   name="main-frame"
   src="/OceanGas/staff/procurement_staff_dashboard.php?embedded=1"
-  style="display:none; width:100%; height:100%; border:none;"
+  style="display:none; width:100%; height:1600px; border:none;"
 ></iframe>
-<div id="mainContent">
+  
 
-    <!-- Main Content Wrapper -->
-      <div class="container">
-        <h1 class="mt-0 mb-4">Inventory Stock</h1>
-        <div class="row">
-          <?php while($row = $result->fetch_assoc()): ?>
-            <?php 
-              // Build filesystem path to check existence
-              $fsPath = $fsPrefix . ltrim($row['image_path'], '/');
-              if (!empty($row['image_path']) && file_exists($fsPath)) {
-                  $image_url = $baseUrl . ltrim($row['image_path'], '/');
-              } else {
-                  $image_url = $baseUrl . 'assets/images/default.jpg';
-              }
-            ?>
-            <div class="col-md-6 col-lg-4">
-              <div class="card">
-                <img src="<?php echo htmlspecialchars($image_url); ?>"
-                     alt="<?php echo htmlspecialchars($row['product_name']); ?>"
-                     class="card-img-top">
-                <div class="card-body">
-                  <!-- Display the full product text -->
-                  <h5 class="card-title"><?php echo htmlspecialchars($row['product_name']); ?></h5>
-                  <p class="available-stock">Available Stock:</p>
-                  <p class="stock-number"><?php echo htmlspecialchars($row['quantity']); ?></p>
-                  <p class="product-details">
-                    High quality LPG cylinder. Check back regularly for updated stock levels.
-                  </p>
-                </div>
-              </div>
-            </div>
-          <?php endwhile; ?>
-        </div>
+  <div id="mainContent" class="content ">
+    <div class="container-fluid">
+      <h1 class="mb-4">Inventory Stock</h1>
+      <div class="mb-3">
+        <input type="text" id="liveSearch" class="form-control" placeholder="Search product name...">
+      </div>
+      <div class="table-responsive">
+        <table id="stockTable" class="table table-bordered table-striped">
+          <thead class="table-dark">
+            <tr>
+              <th scope="col">Product Image</th>
+              <th scope="col">Product Name</th>
+              <th scope="col">Available Stock</th>
+              <th scope="col">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php while($row = $result->fetch_assoc()): ?>
+              <?php
+                $fsPath = $fsPrefix . ltrim($row['image_path'], '/');
+                $image_url = (!empty($row['image_path']) && file_exists($fsPath))
+                  ? $baseUrl . ltrim($row['image_path'], '/')
+                  : $baseUrl . 'assets/images/default.jpg';
+              ?>
+              <tr>
+                <td><img src="<?php echo htmlspecialchars($image_url); ?>" alt="Product Image"></td>
+                <td class="product-name"><?php echo htmlspecialchars($row['product_name']); ?></td>
+                <td><?php echo htmlspecialchars($row['quantity']); ?></td>
+                <td>High quality LPG cylinder. Check back regularly for updated stock levels.</td>
+              </tr>
+            <?php endwhile; ?>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
-  </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+<script>
+  $(document).ready(function() {
+    const table = $('#stockTable').DataTable({
+      dom: 'Bfrtip',
+      buttons: [
+        'copy', 'csv', 'excel',
+        {
+          extend: 'pdfHtml5',
+          orientation: 'landscape',
+          pageSize: 'A4',
+          customize: function(doc) {
+            const imgCells = document.querySelectorAll('#stockTable tbody tr td:first-child img');
+            const body = [];
+            $('#stockTable thead tr').each(function() {
+              const row = [];
+              $(this).find('th').each(function() {
+                row.push({ text: $(this).text(), style: 'tableHeader' });
+              });
+              body.push(row);
+            });
+            $('#stockTable tbody tr').each(function(index) {
+              const row = [];
+              const img = imgCells[index];
+              const canvas = document.createElement('canvas');
+              canvas.width = img.naturalWidth;
+              canvas.height = img.naturalHeight;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              const dataURL = canvas.toDataURL();
+              row.push({ image: dataURL, width: 60 });
+              $(this).find('td:not(:first-child)').each(function() {
+                row.push($(this).text());
+              });
+              body.push(row);
+            });
+            doc.content[1].table.body = body;
+          }
+        },
+        'print'
+      ],
+      responsive: true,
+      paging: true,
+      ordering: true
+    });
 
-  <!-- Bootstrap 5 JS Bundle -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-       // Simple toggle script for dropdown
+    $('#liveSearch').on('keyup', function () {
+      table.columns(1).search(this.value).draw();
+    });
+  });
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.dropdown-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -336,15 +306,12 @@ $fsPrefix = $_SERVER['DOCUMENT_ROOT'] . '/OceanGas/';  // e.g. C:\xampp\htdocs\O
 
   function loadFrame(url) {
     const frame = document.getElementById('mainFrame');
-    // only set src once, so subsequent shows don’t reload
     if (frame.src !== url) {
       frame.src = url;
     }
-    // toggle visibility (you can also just always show: frame.style.display = 'block')
     frame.style.display = 'block';
   }
 
-  // Optional: delegate to _all_ links with data‐target="main-frame":
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('a[data-target="main-frame"]').forEach(link => {
       link.addEventListener('click', e => {
@@ -353,25 +320,7 @@ $fsPrefix = $_SERVER['DOCUMENT_ROOT'] . '/OceanGas/';  // e.g. C:\xampp\htdocs\O
       });
     });
   });
-  function loadFrame(url) {
-    const frame = document.getElementById('mainFrame');
-    // only set src once, so subsequent shows don’t reload
-    if (frame.src !== url) {
-      frame.src = url;
-    }
-    // toggle visibility (you can also just always show: frame.style.display = 'block')
-    frame.style.display = 'block';
-  }
-
-  // Optional: delegate to _all_ links with data‐target="main-frame":
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('a[data-target="main-frame"]').forEach(link => {
-      link.addEventListener('click', e => {
-        e.preventDefault();
-        loadFrame(link.href);
-      });
-    });
-  });
-  </script>
+  
+</script>
 </body>
 </html>

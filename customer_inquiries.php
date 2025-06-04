@@ -12,7 +12,7 @@ $custId = $_SESSION['user_id'];
 $currentPage = basename($_SERVER['PHP_SELF']);
 function isActive($page) {
     global $currentPage;
-    return $currentPage === $page ? 'active' : '';
+    return $currentPage === $page ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50';
 }
 
 // Database connection
@@ -65,9 +65,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $inqSql = "
-SELECT message, submitted_at, status
+SELECT 
+  message,
+  submitted_at,
+  status
 FROM inquiries_and_reviews
 WHERE cust_id = ?
+  AND message IS NOT NULL
 ORDER BY submitted_at DESC
 ";
 $inqStmt = $conn->prepare($inqSql);
@@ -79,21 +83,52 @@ $inqStmt->execute();
 $inquiries = $inqStmt->get_result();
 $inqStmt->close();
 
+$limit = 3;                                    // inquiries per page
+$page  = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$offset = ($page - 1) * $limit;
+
+// 2) Get total count
+$countSql  = "SELECT COUNT(*) AS cnt
+              FROM inquiries_and_reviews
+              WHERE cust_id = ?";
+$countStmt = $conn->prepare($countSql);
+$countStmt->bind_param('i', $custId);
+$countStmt->execute();
+$total = $countStmt->get_result()->fetch_assoc()['cnt'];
+$countStmt->close();
+
+$totalPages = (int) ceil($total / $limit);
+
+// 3) Fetch only current page’s inquiries
+$inqSql = "
+  SELECT message, submitted_at, status
+  FROM inquiries_and_reviews
+  WHERE cust_id = ?
+  AND message IS NOT NULL
+  ORDER BY submitted_at DESC
+  LIMIT ? OFFSET ?
+";
+$inqStmt = $conn->prepare($inqSql);
+$inqStmt->bind_param('iii', $custId, $limit, $offset);
+$inqStmt->execute();
+$inquiries = $inqStmt->get_result();
+$inqStmt->close();
+
 $conn->close();
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Inquiries</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <title>My Inquiries</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
-    .navbar {
+     .navbar {
       background: #0066cc;
       padding: 1rem 3rem;
       position: sticky;
@@ -138,23 +173,27 @@ $conn->close();
     }
     .cart-icon span {position: absolute;top: -0.25rem;right: -0.25rem;background-color: #f56565;color: white;border-radius: 9999px;font-size: 0.7rem;width: 1.25rem;height: 1.25rem;
       display: flex; align-items: center; justify-content: center; } 
-    body { background: #f5f5f5; }
-    .sidebar { background: #fff; border-right: 1px solid #dee2e6; padding: 1rem; height: relative; }
-    .sidebar .nav-link { color: #333; margin-bottom: .5rem; }
-    .sidebar .nav-link.active { background: #e9ecef; font-weight: bold; }
-    .content { padding: 2rem; }
-    .card-section { margin-bottom: 1.5rem; }
-    .card-section .card { border: none; border-radius: .25rem; }
-    .card-section .card-header { background: #f8f9fa; font-weight: bold; }
-    .navbar .profile-text{
+       .navbar .profile-text{
       font-size: 1.2rem;
       color: white;
       margin-right: 10px;
     }
+     .btn-delete {
+      background: #dc3545;
+      color: #fff;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background .3s;
+    }
+    .btn-delete:hover {
+      background: #c82333;
+    }
     .table-container {
       overflow-x: auto;
       background: #fff;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       border-radius: 4px;
     }
     table {
@@ -172,24 +211,11 @@ $conn->close();
       font-weight: bold;
     }
 
-    /* Delete button */
-    .btn-delete {
-      background: #dc3545;
-      color: #fff;
-      border: none;
-      padding: 0.4rem 0.8rem;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: background .3s;
-    }
-    .btn-delete:hover {
-      background: #c82333;
-    }
   </style>
 </head>
-<body>
-    <!-- Navbar -->
+<body class="bg-gray-50 font-sans text-gray-800">
+  <!-- Navbar -->
+   <!-- Navbar -->
   <nav class="navbar">
     <div class="container mx-auto flex items-center">
       <img src="assets/images/Oceangas.png" alt="Logo"/>
@@ -224,75 +250,118 @@ $conn->close();
     </div>
   </nav>
 
-  <div class="container-fluid">
-    <div class="row">
-      <nav class="col-md-3 sidebar">
-        <h5><i class="fas fa-user-circle me-2"></i>My Account</h5>
-        <div class="nav flex-column mt-3">
-          <a class="nav-link <?php echo isActive('customer_acc.php'); ?>" href="customer_acc.php">Account Overview</a>
-          <a class="nav-link <?php echo isActive('customer_orders.php'); ?>" href="customer_orders.php">Orders</a>
-          <hr>
-          <a class="nav-link <?php echo isActive('customer_address.php'); ?>" href="customer_address.php">Address Book</a>
-          <a class="nav-link <?php echo isActive('customer_inquiries.php'); ?>" href="customer_inquiries.php">Inquiries</a>
-          <a class="nav-link <?php echo isActive('customer_reviews.php'); ?>" href="customer_reviews.php">Reviews</a>
-          <a class="nav-link text-danger" href="/OceanGas/customer/logout.php">Sign Out</a>
-          <a href="shop.php" class="btn btn-primary btn-sm active" role="button" aria-pressed="true">Back to shop</a>
-          </div>
-      </nav>
-      <main class="col-md-9 content">
-      <div class="row card-section">
-          <div class="col-md-6 mb-4">
-            <div class="card shadow-sm">
-              <div class="card-header">Make an inquiry</div>
-              <div class="card-body">
-                <p class="mb-1"></p>
-                
-      <h2>Submit Your Inquiry</h2>
-  <form action="" method="POST">
-    <textarea   class="w-full p-3 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-600 transition"
-    name="message" placeholder="Enter your message here..." required rows="5" cols="40"></textarea><br><br>
-    <button class="btn btn-primary btn-sm active" type="submit">Submit Inquiry</button>
-  </form>
-  </div>
-  </div>
-  </div>
-  
-      <div class="row card-section">
-          <div class="col-md-6 mb-4">
-            <div class="card shadow-sm">
-              <div class="card-header">My inquiries</div>
-              <div class="card-body">
-                <p class="mb-2"></p>
-                <div class="table-container">
-  <table>
-    <thead>
-      <tr>
-        <th>Message</th>
-        <th>Submitted At</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      <?php if ($inquiries->num_rows): ?>
-        <?php while ($row = $inquiries->fetch_assoc()): ?>
-          <tr>
-            <td><?php echo nl2br(htmlspecialchars($row['message'])); ?></td>
-            <td><?php echo htmlspecialchars($row['submitted_at']); ?></td>
-            <td><?php echo htmlspecialchars($row['status']); ?></td>
+  <div class="flex">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white shadow-md h-screen sticky top-0 overflow-y-auto">
+      <div class="p-6">
+        <h5 class="text-xl font-semibold flex items-center mb-4"><i class="fas fa-user-circle mr-2"></i>My Account</h5>
+        <nav class="space-y-2">
+          <a href="customer_acc.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_acc.php') ?> transition-all duration-150"><i class="fas fa-user-circle mr-2"></i>Account Overview</a>
+          <a href="customer_orders.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_orders.php') ?> transition-all duration-150"><i class="fas fa-shopping-cart mr-2"></i>Orders</a>
+          <hr class="my-2 border-black-200">
+          <a href="customer_address.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_address.php') ?> transition-all duration-150"><i class="fas fa-address-book mr-2"></i>Address Book</a>
+          <a href="customer_inquiries.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_inquiries.php') ?> transition-all duration-150"><i class="fas fa-question-circle mr-2"></i>Inquiries</a>
+          <a href="customer_reviews.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_reviews.php') ?> transition-all duration-150"><i class="fas fa-star mr-2"></i>Reviews</a>
+          <a href="customer/logout.php" class="block px-4 py-2 mt-4 text-red-600 hover:bg-red-50 rounded-md transition-colors duration-150">Sign Out</a>
+          <a href="shop.php" class="inline-block mt-4 w-full text-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-150">Back to shop</a>
+        </nav>
+      </div>
+    </aside>
 
+   <!-- Replace your existing Main Content with: -->
+<main class="flex-1 p-8 bg-gray-50">
+  <header class="mb-8 flex justify-between items-center">
+    <h2 class="text-2xl font-bold text-gray-800">Inquiries</h2>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Make an Inquiry -->
+    <section class="bg-white rounded-2xl shadow-sm p-6">
+      <h3 class="text-xl font-semibold mb-4">Submit Your Inquiry</h3>
+      <form action="" method="POST" class="space-y-4">
+        <textarea
+          name="message"
+          rows="5"
+          required
+          class="w-full p-4 border border-gray-300 rounded-xl resize-none 
+                 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+          placeholder="Enter your message here…"></textarea>
+        <button
+          type="submit"
+          class="inline-block bg-blue-600 text-white font-medium 
+                 px-6 py-2 rounded-xl shadow hover:bg-blue-700 
+                 focus:ring-2 focus:ring-blue-400 transition">
+          Submit Inquiry
+        </button>
+      </form>
+    </section>
+
+    <!-- My Inquiries Table -->
+    <section class="bg-white rounded-2xl shadow-sm p-6 overflow-x-auto">
+      <h3 class="text-xl font-semibold mb-4">My Inquiries</h3>
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-100 rounded-t-xl">
+          <tr>
+            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Message</th>
+            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Submitted At</th>
+            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Status</th>
           </tr>
-        <?php endwhile; ?>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-100">
+          <?php if ($inquiries->num_rows): ?>
+            <?php while ($row = $inquiries->fetch_assoc()): ?>
+              <tr class="hover:bg-gray-50 transition">
+                <td class="px-4 py-3 text-sm text-gray-700"><?php echo nl2br(htmlspecialchars($row['message'])); ?></td>
+                <td class="px-4 py-3 text-sm text-gray-700"><?php echo htmlspecialchars($row['submitted_at']); ?></td>
+                <td class="px-4 py-3 text-sm">
+                  <span class="inline-block px-3 py-1 rounded-full 
+                    <?php echo $row['status']=='Open' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-gray-200 text-gray-600'; ?>">
+                    <?php echo htmlspecialchars($row['status']); ?>
+                  </span>
+                </td>
+              </tr>
+            <?php endwhile; ?>
+          <?php else: ?>
+            <tr>
+              <td colspan="3" class="px-4 py-6 text-center text-gray-500">
+                You have not submitted any inquiries yet.
+              </td>
+            </tr>
+          <?php endif; ?>
+        </tbody>
+      </table>
+      <?php if ($totalPages > 1): ?>
+  <nav class="mt-4 flex justify-center space-x-2">
+    <!-- Previous link -->
+    <?php if ($page > 1): ?>
+      <a href="?page=<?= $page-1 ?>" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Previous</a>
+    <?php else: ?>
+      <span class="px-3 py-1 text-gray-400 bg-gray-100 rounded">Previous</span>
+    <?php endif; ?>
+
+    <!-- Page number links -->
+    <?php for ($p = 1; $p <= $totalPages; $p++): ?>
+      <?php if ($p === $page): ?>
+        <span class="px-3 py-1 bg-blue-600 text-white rounded"><?= $p ?></span>
       <?php else: ?>
-        <tr>
-          <td colspan="3">You have not submitted any inquiries yet.</td>
-        </tr>
+        <a href="?page=<?= $p ?>" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"><?= $p ?></a>
       <?php endif; ?>
-    </tbody>
-  </table>
-</div>
+    <?php endfor; ?>
+
+    <!-- Next link -->
+    <?php if ($page < $totalPages): ?>
+      <a href="?page=<?= $page+1 ?>" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Next</a>
+    <?php else: ?>
+      <span class="px-3 py-1 text-gray-400 bg-gray-100 rounded">Next</span>
+    <?php endif; ?>
+  </nav>
+<?php endif; ?>
+
+    </section>
   </div>
-  </div>
-  </main>
+</main>
   <!-- (1) Cart Modal -->
   <div id="cartModal" class="modal" style="display:none; position:fixed; z-index:200; left:0; top:0; width:100%; height:100%; overflow:auto; background:rgba(0,0,0,0.5);">
     <div class="modal-content" style="background:#fff; margin:10% auto; padding:20px; border-radius:8px; max-width:500px;">
@@ -381,3 +450,4 @@ $conn->close();
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+

@@ -204,8 +204,8 @@
     $date_to = isset($_GET['date_to']) ? $_GET['date_to'] : '';
     $search_query = isset($_GET['search']) ? $_GET['search'] : '';
 
-    // Build query with filters
-    $sql = "SELECT d.*, o.invoice_summary, o.delivery_info
+    // Build query with filters - Updated to include order_number
+    $sql = "SELECT d.*, o.invoice_summary, o.delivery_info, o.order_number
             FROM deliveries d
             LEFT JOIN orders o ON d.order_id = o.order_id
             WHERE 1=1"; // 1=1 is always true, allows us to conditionally append filters
@@ -238,13 +238,14 @@
     }
 
     if (!empty($search_query)) {
-        $sql .= " AND (d.order_id LIKE ? OR d.assigned_to LIKE ? OR d.notes LIKE ? OR o.invoice_summary LIKE ?)";
+        $sql .= " AND (d.order_id LIKE ? OR d.assigned_to LIKE ? OR d.notes LIKE ? OR o.invoice_summary LIKE ? OR o.order_number LIKE ?)";
         $search_param = "%" . $search_query . "%";
         $params[] = $search_param;
         $params[] = $search_param;
         $params[] = $search_param;
         $params[] = $search_param;
-        $types .= "ssss";
+        $params[] = $search_param;
+        $types .= "sssss";
     }
 
     $sql .= " ORDER BY d.delivery_date DESC";
@@ -349,7 +350,7 @@
             <thead class="table-dark">
               <tr>
                 <th>Delivery ID</th>
-                <th>Order ID</th>
+                <th>Order Number</th>
                 <th>Order Details</th>
                 <th>Delivery Location</th>
                 <th>Assigned To</th>
@@ -384,7 +385,7 @@
             ?>
               <tr>
                 <td><?= htmlspecialchars($row['delivery_id']) ?></td>
-                <td><?= htmlspecialchars($row['order_id']) ?></td>
+                <td><?= htmlspecialchars($row['order_number'] ?? 'N/A') ?></td>
                 <td><?= htmlspecialchars($row['invoice_summary'] ?? 'N/A') ?></td>
                 <td><?= htmlspecialchars($delivery_address) ?></td>
                 <td><?= htmlspecialchars($row['assigned_to']) ?></td>

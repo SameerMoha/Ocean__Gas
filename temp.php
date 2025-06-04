@@ -1,5 +1,6 @@
 <?php
 session_start();
+
 // Ensure the user is logged in
 if (!isset($_SESSION['user_id'])) {
     header('Location: customer/login.php');
@@ -11,7 +12,7 @@ $custId = $_SESSION['user_id'];
 $currentPage = basename($_SERVER['PHP_SELF']);
 function isActive($page) {
     global $currentPage;
-    return $currentPage === $page ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50';
+    return $currentPage === $page ? 'active' : '';
 }
 
 // Database connection
@@ -24,66 +25,69 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-$acctSql = "SELECT F_name, L_name FROM customers WHERE cust_id = ?";
+// Fetch account details
+$acctSql = "SELECT F_name, L_name, Email, Phone_number FROM customers WHERE cust_id = ?";
 $acctStmt = $conn->prepare($acctSql);
 if (!$acctStmt) die("Account query failed: " . $conn->error);
 $acctStmt->bind_param('i', $custId);
 if (!$acctStmt->execute()) die("Account execution failed: " . $acctStmt->error);
 $acct = $acctStmt->get_result()->fetch_assoc();
+$acctStmt->close();
 
-// Handle form submission: update existing customer's address fields
+
+
+// Handle inquiry submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $location  = trim($_POST['delivery_location']);
-    $apartment = trim($_POST['apartment_number']);
-    $phone     = trim($_POST['phone_number']);
+    $message = $_POST['message'] ?? '';
 
-    $updSql = "UPDATE customers SET delivery_location = ?, apartment_number = ?, phone_number = ? WHERE cust_id = ?";
-    $updStmt = $conn->prepare($updSql);
-    if (!$updStmt) {
-        die("Update prepare failed: " . $conn->error);
+    if (!empty($message)) {
+      date_default_timezone_set('Africa/Nairobi');
+        $submitted_at = date('Y-m-d H:i:s');
+
+        $sql = "INSERT INTO inquiries (cust_id, message, submitted_at) VALUES (?, ?, ?)";
+        $stmt = $conn->prepare($sql);
+
+        if ($stmt) {
+            $stmt->bind_param("iss", $custId, $message, $submitted_at);
+
+            if ($stmt->execute()) {
+                echo "Inquiry submitted successfully!";
+            } else {
+                echo "Error submitting inquiry: " . $stmt->error;
+            }
+            $stmt->close();
+        } else {
+            echo "Database error: " . $conn->error;
+        }
+    } else {
+        echo "Message cannot be empty.";
     }
-    if (!$updStmt->bind_param('sssi', $location, $apartment, $phone, $custId)) {
-        die("Update bind_param failed: " . $updStmt->error);
-    }
-    if (!$updStmt->execute()) {
-        die("Update execution failed: " . $updStmt->error);
-    }
-    header('Location: customer_address.php');
-    exit;
 }
 
-// Fetch current address fields from customers table
-$addr = null;
-$addrSql = "SELECT delivery_location, apartment_number, phone_number FROM customers WHERE cust_id = ?";
-$addrStmt = $conn->prepare($addrSql);
-if (!$addrStmt) {
-    die("Select prepare failed: " . $conn->error);
+$inqSql = "
+SELECT message, submitted_at, status
+FROM inquiries_and_reviews
+WHERE cust_id = ?
+ORDER BY submitted_at DESC
+";
+$inqStmt = $conn->prepare($inqSql);
+if (!$inqStmt) {
+  die("Inquiry query failed: " . $conn->error);
 }
-if (!$addrStmt->bind_param('i', $custId)) {
-    die("Select bind_param failed: " . $addrStmt->error);
-}
-if (!$addrStmt->execute()) {
-    die("Select execution failed: " . $addrStmt->error);
-}
-$res = $addrStmt->get_result();
-if ($res && $res->num_rows) {
-    $addr = $res->fetch_assoc();
-}
+$inqStmt->bind_param('i', $custId);
+$inqStmt->execute();
+$inquiries = $inqStmt->get_result();
+$inqStmt->close();
 
-$addrSql = "SELECT delivery_location, apartment_number, phone_number FROM customers WHERE cust_id = ? ORDER BY cust_id DESC LIMIT 1";
-$addrStmt = $conn->prepare($addrSql);
-if (!$addrStmt) die("Address query failed: " . $conn->error);
-$addrStmt->bind_param('i', $custId);
-if (!$addrStmt->execute()) die("Address execution failed: " . $addrStmt->error);
-$addr = $addrStmt->get_result()->fetch_assoc();
-
+$conn->close();
 ?>
+
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>My Address</title>
+  <title>My Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -139,6 +143,40 @@ $addr = $addrStmt->get_result()->fetch_assoc();
       color: white;
       margin-right: 10px;
     }
+     .btn-delete {
+      background: #dc3545;
+      color: #fff;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background .3s;
+    }
+    .btn-delete:hover {
+      background: #c82333;
+    }
+    .table-container {
+      overflow-x: auto;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border-radius: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f0f0f0;
+      font-weight: bold;
+    }
+
   </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-800">
@@ -158,7 +196,7 @@ $addr = $addrStmt->get_result()->fetch_assoc();
   <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown" style=" color:black;">
     <li><a class="dropdown-item" href="customer_acc.php"> My Account</a></li>
     <li><a class="dropdown-item" href="customer_orders.php"> Orders</a></li>
-    <li><a class="dropdown-item" href='customer_inquiries.php'> Help</a></li>
+    <li><a class="dropdown-item" href='customer_inuiries.php'> Help</a></li>
     <li><hr class="dropdown-divider"></li>
     <li>
       <a class="dropdown-item text-danger" href="/OceanGas/customer/logout.php">
@@ -184,12 +222,12 @@ $addr = $addrStmt->get_result()->fetch_assoc();
       <div class="p-6">
         <h5 class="text-xl font-semibold flex items-center mb-4"><i class="fas fa-user-circle mr-2"></i>My Account</h5>
         <nav class="space-y-2">
-         <a href="customer_acc.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_acc.php') ?> transition-all duration-150"><i class="fas fa-user-circle mr-2"></i>Account Overview</a>
-          <a href="customer_orders.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_orders.php') ?> transition-all duration-150"><i class="fas fa-shopping-cart mr-2"></i>Orders</a>
-          <hr class="my-2 border-black-200">
-          <a href="customer_address.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_address.php') ?> transition-all duration-150"><i class="fas fa-address-book mr-2"></i>Address Book</a>
-          <a href="customer_inquiries.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_inquiries.php') ?> transition-all duration-150"><i class="fas fa-question-circle mr-2"></i>Inquiries</a>
-          <a href="customer_reviews.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_reviews.php') ?> transition-all duration-150"><i class="fas fa-star mr-2"></i>Reviews</a>
+          <a href="customer_acc.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_acc.php') ?> transition-all duration-150">Account Overview</a>
+          <a href="customer_orders.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_orders.php') ?> transition-all duration-150">Orders</a>
+          <hr class="my-2 border-gray-200">
+          <a href="customer_address.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_address.php') ?> transition-all duration-150">Address Book</a>
+          <a href="customer_inquiries.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_inquiries.php') ?> transition-all duration-150">Inquiries</a>
+          <a href="customer_reviews.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_reviews.php') ?> transition-all duration-150">Reviews</a>
           <a href="customer/logout.php" class="block px-4 py-2 mt-4 text-red-600 hover:bg-red-50 rounded-md transition-colors duration-150">Sign Out</a>
           <a href="shop.php" class="inline-block mt-4 w-full text-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-150">Back to shop</a>
         </nav>
@@ -199,47 +237,64 @@ $addr = $addrStmt->get_result()->fetch_assoc();
     <!-- Main Content -->
     <main class="flex-1 p-8">
       <header class="mb-6 flex justify-between items-center">
-        <h2 class="text-2xl font-semibold">Address book</h2>
+        <h2 class="text-2xl font-semibold">Inquiries</h2>
       </header>
 <main class="col-md-9 content">
-        <div class="form-section">
-          <?php if ($addr): ?>
-            <div class="card mb-4">
-              <div class="card-header text-1xl ">Current Address</div>
+      <div class="row card-section">
+          <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+              <div class="card-header">Make an inquiry</div>
               <div class="card-body">
-                <p><?php echo htmlspecialchars($addr['delivery_location']); ?></p>
-                <p><?php echo htmlspecialchars($addr['apartment_number']); ?></p>
-                <p>Phone: <?php echo htmlspecialchars($addr['phone_number']); ?></p>
-              </div>
-            </div>
-          <?php endif; ?>
-
-          <div class="card">
-            <div class="card-header"><?php echo $addr ? 'Edit Address' : 'Add Address'; ?></div>
-            <div class="card-body">
-              <form method="post" action="customer_address.php">
-                <div class="mb-3">
-                  <label for="delivery_location" class="form-label ">Delivery Location</label>
-                  <input type="text" class="form-control" id="delivery_location" name="delivery_location" value="<?php echo $addr ? htmlspecialchars($addr['delivery_location']) : ''; ?>" required>
-                </div>
-                <div class="mb-3">
-                  <label for="apartment_number" class="form-label">Apartment / Suite</label>
-                  <input type="text" class="form-control" id="apartment_number" name="apartment_number" value="<?php echo $addr ? htmlspecialchars($addr['apartment_number']) : ''; ?>">
-                </div>
-                <div class="mb-3">
-                  <label for="phone_number" class="form-label">Phone Number</label>
-                  <input type="text" class="form-control" id="phone_number" name="phone_number" value="<?php echo $addr ? htmlspecialchars($addr['phone_number']) : ''; ?>" required>
-                </div>
-                <button type="submit" class="btn btn-primary"><?php echo $addr ? 'Update Address' : 'Save Address'; ?></button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
+                <p class="mb-1"></p>
+                
+      <h2>Submit Your Inquiry</h2>
+  <form action="" method="POST">
+    <textarea   class="w-full p-3 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-600 transition"
+    name="message" placeholder="Enter your message here..." required rows="5" cols="40"></textarea><br><br>
+    <button class="btn btn-primary btn-sm active" type="submit">Submit Inquiry</button>
+  </form>
   </div>
-<!-- (1) Cart Modal -->
-<div id="cartModal" class="modal" style="display:none; position:fixed; z-index:200; left:0; top:0; width:100%; height:100%; overflow:auto; background:rgba(0,0,0,0.5);">
+  </div>
+  </div>
+  
+      <div class="row card-section">
+          <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+              <div class="card-header">My inquiries</div>
+              <div class="card-body">
+                <p class="mb-2"></p>
+                <div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>Message</th>
+        <th>Submitted At</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php if ($inquiries->num_rows): ?>
+        <?php while ($row = $inquiries->fetch_assoc()): ?>
+          <tr>
+            <td><?php echo nl2br(htmlspecialchars($row['message'])); ?></td>
+            <td><?php echo htmlspecialchars($row['submitted_at']); ?></td>
+            <td><?php echo htmlspecialchars($row['status']); ?></td>
+
+          </tr>
+        <?php endwhile; ?>
+      <?php else: ?>
+        <tr>
+          <td colspan="3">You have not submitted any inquiries yet.</td>
+        </tr>
+      <?php endif; ?>
+    </tbody>
+  </table>
+</div>
+  </div>
+  </div>
+  </main>
+  <!-- (1) Cart Modal -->
+  <div id="cartModal" class="modal" style="display:none; position:fixed; z-index:200; left:0; top:0; width:100%; height:100%; overflow:auto; background:rgba(0,0,0,0.5);">
     <div class="modal-content" style="background:#fff; margin:10% auto; padding:20px; border-radius:8px; max-width:500px;">
       <h2 class="text-2xl font-bold mb-4">Your Cart</h2>
       <div id="cartModalContent"></div>
@@ -260,9 +315,8 @@ $addr = $addrStmt->get_result()->fetch_assoc();
     </div>
   </div>
 
-
+  <!-- (3) Cart JavaScript -->
   <script>
-    
     // 1. Load / init
     let cart = JSON.parse(localStorage.getItem('cart')) || { items: [], total: 0 };
 
@@ -323,6 +377,7 @@ $addr = $addrStmt->get_result()->fetch_assoc();
     // initialize badge
     updateCartDisplay();
   </script>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

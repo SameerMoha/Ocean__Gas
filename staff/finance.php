@@ -358,7 +358,7 @@ $conn->close();
   id="mainFrame"
   name="main-frame"
   src="/OceanGas/staff/procurement_staff_dashboard.php?embedded=1"
-  style="margin-left:230px; display:none; width:85%; height:fit-content; border:none; "
+  style="margin-left:230px; display:none; width:85%; height:1200px; border:none; "
 ></iframe>
 <div id="mainContent">
   <div class="main-content">
