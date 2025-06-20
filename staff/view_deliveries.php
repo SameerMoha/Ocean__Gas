@@ -283,7 +283,6 @@
             <label for="statusFilter" class="form-label">Status</label>
             <select class="form-select" id="statusFilter" name="status">
               <option value="">All Statuses</option>
-              <option value="Pending" <?= ($status_filter === 'Pending') ? 'selected' : '' ?>>Pending</option>
               <option value="In Transit" <?= ($status_filter === 'In Transit') ? 'selected' : '' ?>>In Transit</option>
               <option value="Delivered" <?= ($status_filter === 'Delivered') ? 'selected' : '' ?>>Delivered</option>
               <option value="Cancelled" <?= ($status_filter === 'Cancelled') ? 'selected' : '' ?>>Cancelled</option>
@@ -415,7 +414,6 @@
                             <div class="mb-3">
                               <label for="statusSelect<?= $row['delivery_id'] ?>" class="form-label">New Status</label>
                               <select class="form-select" id="statusSelect<?= $row['delivery_id'] ?>" name="new_status" required>
-                                <option value="Pending" <?= ($row['delivery_status'] === 'Pending') ? 'selected' : '' ?>>Pending</option>
                                 <option value="In Transit" <?= ($row['delivery_status'] === 'In Transit') ? 'selected' : '' ?>>In Transit</option>
                                 <option value="Delivered" <?= ($row['delivery_status'] === 'Delivered') ? 'selected' : '' ?>>Delivered</option>
                                 <option value="Cancelled" <?= ($row['delivery_status'] === 'Cancelled') ? 'selected' : '' ?>>Cancelled</option>
@@ -484,19 +482,14 @@
             $cancelled = $cancelled_result->fetch_assoc()['cancelled'];
             ?>
             
-            <div class="row mb-3">
-              <div class="col-md-6">
+            <div class="row mb-4">
+              <div class="">
                 <div class="stats-item">
                   <h4><?= $total ?></h4>
                   <p>Total Deliveries</p>
                 </div>
               </div>
-              <div class="col-md-6">
-                <div class="stats-item">
-                  <h4><?= $pending ?></h4>
-                  <p>Pending Deliveries</p>
-                </div>
-              </div>
+             
             </div>
             
             <div class="row">
@@ -556,9 +549,9 @@
       var myChart = new Chart(ctx, {
         type: 'pie',
         data: {
-          labels: ['Pending', 'In Transit', 'Delivered', 'Cancelled'],
+          labels: [ 'In Transit', 'Delivered', 'Cancelled'],
           datasets: [{
-            data: [<?= $pending ?>, <?= $in_transit ?>, <?= $delivered ?>, <?= $cancelled ?>],
+            data: [ <?= $in_transit ?>, <?= $delivered ?>, <?= $cancelled ?>],
             backgroundColor: [
               '#ffc107', // Pending - yellow
               '#17a2b8', // In Transit - teal

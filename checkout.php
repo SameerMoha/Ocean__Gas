@@ -2,6 +2,36 @@
 session_start();
 require_once 'includes/db.php'; // This file should create and return $conn
 
+// Prevent access if order was just placed
+if (isset($_SESSION['order_placed']) && $_SESSION['order_placed'] === true) {
+    echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">';
+    echo '<title>Redirecting...</title>';
+    echo '<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>';
+    echo '<style>body{background:#f8f9fa;}</style>';
+    echo '</head><body>';
+    echo '<script>
+      Swal.fire({
+        icon: "error",
+        title: "Oops!",
+        html: `<div style=\'font-size:1.1em;\'>You have already placed your order.<br><b>Going back to checkout is not allowed.</b><br><br>Please return to the shop to start a new order.</div>`,
+        confirmButtonText: "Go to Shop",
+        confirmButtonColor: "#007bff",
+        background: "#fff",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        timer: 6000,
+        timerProgressBar: true,
+        didOpen: function(popup) {
+          popup.addEventListener("mouseenter", Swal.stopTimer);
+          popup.addEventListener("mouseleave", Swal.resumeTimer);
+        }
+      }).then(function() { window.location.href = "shop.php"; });
+      setTimeout(function(){ window.location.href = "shop.php"; }, 6100);
+    </script>';
+    echo '</body></html>';
+    exit;
+}
+
 // Ensure the customer is logged in
 if (!isset($_SESSION['user_id'])) {
     header("Location: customer/login.php");
@@ -152,49 +182,31 @@ $billing_name = $F_name . ' ' . $L_name;
   // 2. Always POST the full cart JSON (including IDs)
   cartDataInput.value = JSON.stringify(cart);
 
-  // 3. If there's something in the cart, build a grouped summary by ID
+  // 3. If there's something in the cart, summarize by product_name
   if (cart.items.length > 0) {
-    let itemMap     = {};
+    let productMap = {};
     let totalAmount = 0;
-
-    cart.items.forEach(item => {
-      const id       = item.id;
-      const name     = item.product_name;
-      const price    = parseFloat(item.price);
-      const qty      = item.quantity || 1;
-
-      if (!itemMap[id]) {
-        // new entry keyed by product_id
-        itemMap[id] = {
-          product_id:   id,
-          product_name: name,
-          unitPrice:    price,
-          quantity:     0,
-          lineTotal:    0
-        };
-      }
-
-      // accumulate quantity and line total
-      itemMap[id].quantity += qty;
-      itemMap[id].lineTotal  = itemMap[id].quantity * price;
-    });
-
-    // 4. Render as a Bootstrap list-group (or table if you prefer)
     let summaryHTML = '<ul class="list-group mb-3">';
-    Object.values(itemMap).forEach(entry => {
+    cart.items.forEach(item => {
+      const name = item.product_name;
+      const qty = item.quantity || 1;
+      const price = parseFloat(item.price);
+      if (!productMap[name]) {
+        productMap[name] = { quantity: 0, total: 0 };
+      }
+      productMap[name].quantity += qty;
+      productMap[name].total += qty * price;
+    });
+    Object.entries(productMap).forEach(([name, data]) => {
       summaryHTML += `
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-          ${entry.quantity} × ${entry.product_name}
-          <span>Ksh ${entry.unitPrice.toFixed(2)} each</span>
+        <li class=\"list-group-item d-flex justify-content-between align-items-center\">
+          ${data.quantity} x ${name} - Ksh ${data.total.toLocaleString()}
         </li>
       `;
-      totalAmount += entry.lineTotal;
+      totalAmount += data.total;
     });
-    summaryHTML += `</ul>
-      <h5 class="text-end">Total: Ksh ${totalAmount.toFixed(2)}</h5>`;
-
+    summaryHTML += `</ul>\n      <h5 class=\"text-end\">Total: Ksh ${totalAmount.toLocaleString()}</h5>`;
     cartSummary.innerHTML = summaryHTML;
-
   } else {
     cartSummary.innerHTML = '<p>Your cart is empty.</p>';
   }

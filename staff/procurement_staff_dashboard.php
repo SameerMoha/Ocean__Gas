@@ -137,7 +137,24 @@ if ($trend_result && $trend_result->num_rows > 0) {
 }
 $trend_stmt->close();
 
-$conn->close();
+// Build a map: product_name => supplier_id with lowest price
+$productBestSupplier = [];
+$conn2 = new mysqli($host, $user, $pass, $db);
+if ($conn2->connect_error) {
+    die("Connection failed: " . $conn2->connect_error);
+}
+foreach ($stocks as $stock) {
+    $pName = trim($stock['product_name']);
+    $stmt = $conn2->prepare("SELECT pr.supplier_id FROM price pr JOIN products p ON pr.product_id = p.product_id WHERE p.product_name = ? ORDER BY pr.buying_price ASC LIMIT 1");
+    $stmt->bind_param("s", $pName);
+    $stmt->execute();
+    $stmt->bind_result($sid);
+    if ($stmt->fetch()) {
+        $productBestSupplier[$pName] = $sid;
+    }
+    $stmt->close();
+}
+$conn2->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -427,18 +444,31 @@ $conn->close();
                 </tr>
               </thead>
               <tbody>
-                <?php foreach ($supplierData as $product => $quantity): ?>
-                  <tr>
+                <?php foreach ($stocks as $stock): ?>
+                  <?php 
+                    $product = trim($stock['product_name']);
+                    $quantity = intval($stock['quantity']);
+                    $isLow = isset($thresholds[$product]) && $quantity < $thresholds[$product];
+                    $bestSupplierId = $productBestSupplier[$product] ?? null;
+                  ?>
+                  <tr
+                    <?php if ($isLow && $bestSupplierId): ?>
+                      class="table-danger clickable-row" 
+                      style="cursor:pointer" 
+                      title="Click to procure <?php echo htmlspecialchars($product); ?> from best supplier"
+                      onclick="window.location.href='/OceanGas/staff/supplier_info.php?id=<?php echo urlencode($bestSupplierId); ?>'"
+                    <?php endif; ?>
+                  >
                     <td><?php echo htmlspecialchars($product); ?></td>
                     <td><?php echo htmlspecialchars($quantity); ?></td>
                     <td>
-                      <?php if (isset($thresholds[$product]) && $quantity < $thresholds[$product]): ?>
+                      <?php if ($isLow): ?>
                         <span class="badge bg-danger">Low Stock</span>
                       <?php else: ?>
                         <span class="badge bg-success">In Stock</span>
                       <?php endif; ?>
                     </td>
-                    <td><?php echo htmlspecialchars($thresholds[$product]); ?></td>
+                    <td><?php echo htmlspecialchars($thresholds[$product] ?? '-'); ?></td>
                   </tr>
                 <?php endforeach; ?>
               </tbody>

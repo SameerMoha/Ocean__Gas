@@ -1,0 +1,5 @@
+[18-Jun-2025 09:40:40 Europe/Berlin] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in C:\xampp\htdocs\OceanGas\staff\process_return.php:52
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\OceanGas\staff\process_return.php on line 52
+[18-Jun-2025 09:53:52 Europe/Berlin] PHP Warning:  Undefined variable $returnAmount in C:\xampp\htdocs\OceanGas\staff\process_return.php on line 63

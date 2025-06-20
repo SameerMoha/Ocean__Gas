@@ -21,38 +21,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $result = $check->get_result();
 
     if ($result->num_rows > 0) {
-        echo "<script>alert('A delivery for this order already exists.'); window.location.href='add_delivery_sales.php';</script>";
-        exit();
-    }
-
-    // Start transaction to ensure both operations succeed
-    $conn->begin_transaction();
-    
-    try {
-        // Insert delivery record
-        $stmt = $conn->prepare("INSERT INTO deliveries (order_id, assigned_to, delivery_date, notes) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("isss", $order_id, $assigned_to, $delivery_date, $notes);
-        $stmt->execute();
+        $error = "A delivery for this order already exists.";
+    } else {
+        // Start transaction to ensure both operations succeed
+        $conn->begin_transaction();
         
-        // Optional: Update order status to 'out_for_delivery' or 'processing'
-        // Uncomment the lines below if you want to change order status:
-        // $updateStmt = $conn->prepare("UPDATE orders SET order_status = 'out_for_delivery' WHERE order_id = ?");
-        // $updateStmt->bind_param("i", $order_id);
-        // $updateStmt->execute();
-        
-        // Commit transaction
-        $conn->commit();
-        
-        echo "<script>alert('Delivery added successfully!'); </script>";
-        
-        // Redirect to sales view
-        echo "<script>window.location.href='view_deliveries_sales.php';</script>";
-        exit();
-        
-    } catch (Exception $e) {
-        // Rollback transaction on error
-        $conn->rollback();
-        echo "<script>alert('Error adding delivery. Please try again.');</script>";
+        try {
+            // Insert delivery record
+            $stmt = $conn->prepare("INSERT INTO deliveries (order_id, assigned_to, delivery_date, notes) VALUES (?, ?, ?, ?)");
+            $stmt->bind_param("isss", $order_id, $assigned_to, $delivery_date, $notes);
+            $stmt->execute();
+            
+            // Commit transaction
+            $conn->commit();
+            
+            // Set success flag instead of showing alert
+            $success = true;
+            
+        } catch (Exception $e) {
+            // Rollback transaction on error
+            $conn->rollback();
+            $error = "Error adding delivery. Please try again.";
+        }
     }
 }
 
@@ -65,37 +55,75 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <title>Add Delivery</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <style>
+        :root {
+            --primary-color: #6a008a;
+            --hover-transition: all 0.3s ease;
+        }
+
         body {
             display: flex;
             background: #f8f9fa;
             font-family: Arial, sans-serif;
         }
+
+        /* Sidebar Styles */
         .sidebar {
             width: 250px;
-            background: #6a008a;
+            background: var(--primary-color);
             color: white;
             padding: 20px;
             position: fixed;
             height: 100vh;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            transition: var(--hover-transition);
         }
+
         .sidebar a {
             color: white;
             text-decoration: none;
             display: block;
             padding: 10px;
             margin: 5px 0;
+            border-radius: 8px;
+            transition: var(--hover-transition);
+            position: relative;
+            overflow: hidden;
+            background: none;
         }
+
         .sidebar a:hover {
-            background: rgba(255,255,255,0.2);
-            border-radius: 5px;
+            background: #5a0076;
+            transform: translateX(5px);
         }
+
         .sidebar a.active {
-            background: rgba(255,255,255,0.3);
+            background: #4a005f;
             font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-        .dropdown-btn, .dropdown-btn {
-            padding: 10px;
+
+        .sidebar a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: white;
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar a:hover::after {
+            transform: scaleX(1);
+        }
+
+        /* Dropdown Styles */
+        .dropdown-btn {
+            padding: 12px 15px;
             width: 100%;
             background: none;
             border: none;
@@ -103,23 +131,168 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             cursor: pointer;
             font-size: 16px;
             color: white;
+            border-radius: 8px;
+            transition: var(--hover-transition);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
+
+        .dropdown-btn:hover {
+            background: #5a0076;
+        }
+
         .dropdown-container {
             display: none;
-            background-color:#6a008a;
+            background-color: #6a008a;
             padding-left: 20px;
+            border-radius: 8px;
+            margin: 5px 0;
+            transition: var(--hover-transition);
         }
-        .dropdown-btn.active + .dropdown-container {
-            display: block;
+
+        /* Form Styles */
+        .form-control {
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            transition: var(--hover-transition);
+            background: white;
         }
+
+        .form-control:focus {
+            box-shadow: 0 0 0 0.2rem rgba(106, 0, 138, 0.25);
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 8px;
+            transition: var(--hover-transition);
+        }
+
+        /* Button Styles */
+        .btn {
+            padding: 12px 25px;
+            border-radius: 8px;
+            transition: var(--hover-transition);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(106, 0, 138, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            border: none;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        /* Card Styles */
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: var(--hover-transition);
+            border: none;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            background: var(--primary-color);
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 15px 20px;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Order Details Animation */
+        #order-details {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        #order-details.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Content Area */
         .content {
             margin-left: 270px;
             padding: 30px;
             flex-grow: 1;
+            background: #f8f9fa;
+        }
+
+        /* Custom Select Styles */
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236a008a' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 30px;
+        }
+
+        /* Loading Animation */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
+<!-- Loading Overlay -->
+<div class="loading-overlay">
+    <div class="loading-spinner"></div>
+</div>
+
 <nav class="sidebar"> 
     <h2>Sales Panel</h2>
     <a href="/OceanGas/staff/sales_staff_dashboard.php" class="<?php echo ($current_page === 'sales_staff_dashboard.php') ? 'active' : ''; ?>"><i class="fas fa-chart-line"></i> Cockpit</a>
@@ -255,6 +428,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
 <script>
 // Store all orders data for filtering
 const allOrders = <?= json_encode($confirmedOrders) ?>;
@@ -313,8 +487,14 @@ function showOrderDetails() {
         document.getElementById('order-date').textContent = new Date(date).toLocaleDateString();
         
         detailsDiv.style.display = 'block';
+        setTimeout(() => {
+            detailsDiv.classList.add('show');
+        }, 50);
     } else {
-        detailsDiv.style.display = 'none';
+        detailsDiv.classList.remove('show');
+        setTimeout(() => {
+            detailsDiv.style.display = 'none';
+        }, 500);
     }
 }
 
@@ -341,6 +521,63 @@ document.addEventListener('DOMContentLoaded', function() {
     dropdowns[0].click();
   }
 });
+
+// Form submission handling
+document.querySelector('form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Show loading overlay
+    document.querySelector('.loading-overlay').style.display = 'flex';
+    
+    // Show SweetAlert2 loading
+    Swal.fire({
+        title: 'Processing',
+        html: 'Adding delivery...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    // Submit the form
+    this.submit();
+});
+
+// Show success message
+<?php if (isset($success)): ?>
+Swal.fire({
+    title: 'Success!',
+    text: 'Delivery added successfully!',
+    icon: 'success',
+    confirmButtonColor: '#6a008a',
+    showClass: {
+        popup: 'animate__animated animate__fadeInDown'
+    },
+    hideClass: {
+        popup: 'animate__animated animate__fadeOutUp'
+    }
+}).then((result) => {
+    if (result.isConfirmed) {
+        window.location.href = 'view_deliveries_sales.php';
+    }
+});
+<?php endif; ?>
+
+// Show error message
+<?php if (isset($error)): ?>
+Swal.fire({
+    title: 'Error!',
+    text: '<?php echo $error; ?>',
+    icon: 'error',
+    confirmButtonColor: '#6a008a',
+    showClass: {
+        popup: 'animate__animated animate__fadeInDown'
+    },
+    hideClass: {
+        popup: 'animate__animated animate__fadeOutUp'
+    }
+});
+<?php endif; ?>
 </script>
 </body>
 </html>

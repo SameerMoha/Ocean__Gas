@@ -100,6 +100,14 @@ $res_proc = $conn->query($sql_sum);
 if(!$res_proc) die("Procurement sum error: ".$conn->error);
 $daily_procurement_total = $res_proc->fetch_assoc()['daily_procurement_total'];
 
+
+$qOverall = "SELECT IFNULL(SUM(total_amount),0) AS total_sales_overall, COUNT(*) AS num_sales FROM sales_record";
+$resultOverall = $conn->query($qOverall);
+$rowOverall = $resultOverall ? $resultOverall->fetch_assoc() : ['total_sales_overall' => 0, 'num_sales' => 0];
+$totalSalesOverall = $rowOverall['total_sales_overall'];
+$numSales = $rowOverall['num_sales'];
+$averageSale = $numSales > 0 ? $totalSalesOverall / $numSales : 0;
+
 // 3) Funds summary (unified funds table)
 $sql = "
   SELECT
@@ -116,6 +124,7 @@ $row = $result->fetch_assoc();
 $total_allocated = (float)$row['total_allocated'];
 $total_used      = (float)$row['total_used'];
 $balance         = $total_allocated - $total_used;
+$totalbalance         = $totalSalesOverall + $balance;
 $usage_percent   = $total_allocated
     ? round($total_used / $total_allocated * 100)
     : 0;
@@ -366,7 +375,7 @@ $conn->close();
 
  <div class="card card-reservoir mb-4 p-4 bg-white text-center">
       <h3>Cash Balance</h3>
-      <h2 class="display-4">KES <?=number_format($balance,2)?></h2>
+      <h2 class="display-4">KES <?=number_format($totalbalance,2)?></h2>
       <?php if($balance<$threshold_balance):?>
       <div class="alert alert-warning mt-3">
         ⚠️ Low balance! Minimum is KES <?=number_format($threshold_balance)?>.

@@ -22,6 +22,11 @@ $end_date        = $_GET['end_date']        ?? '';
 $supplier_filter = $_GET['supplier']        ?? '';
 $product_filter  = $_GET['product']         ?? '';
 
+// pagination parameters
+$page = max(1, intval($_GET['page'] ?? 1));
+$per_page = in_array(intval($_GET['per_page'] ?? 25), [10, 25, 50]) ? intval($_GET['per_page'] ?? 25) : 25;
+$offset = ($page - 1) * $per_page;
+
 // base query (joins to get buying_price)
 $sql = "
   SELECT
@@ -74,7 +79,24 @@ if ($product_filter !== '') {
     $params[] = "%{$product_filter}%";
 }
 
-$sql .= " ORDER BY ph.purchase_date DESC";
+// Get total count for pagination
+$count_sql = "SELECT COUNT(*) as total FROM (" . $sql . ") as subquery";
+$count_stmt = $conn->prepare($count_sql);
+if ($types) {
+    $count_stmt->bind_param($types, ...$params);
+}
+$count_stmt->execute();
+$count_result = $count_stmt->get_result();
+$total_records = $count_result->fetch_assoc()['total'];
+$count_stmt->close();
+
+$total_pages = ceil($total_records / $per_page);
+
+// Add pagination to main query
+$sql .= " ORDER BY ph.purchase_date DESC LIMIT ? OFFSET ?";
+$types .= 'ii';
+$params[] = $per_page;
+$params[] = $offset;
 
 $stmt = $conn->prepare($sql);
 if ($types) {
@@ -87,6 +109,13 @@ $purchase_history = $result->fetch_all(MYSQLI_ASSOC);
 
 $stmt->close();
 $conn->close();
+
+// Build pagination URL
+function buildPaginationUrl($params, $page, $per_page) {
+    $params['page'] = $page;
+    $params['per_page'] = $per_page;
+    return '?' . http_build_query($params);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -102,12 +131,15 @@ $conn->close();
     .content-wrapper { flex: 1; padding: 20px; background: #f8f9fa; }
     .history-table th, .history-table td { padding: 10px; border: 1px solid #dee2e6; }
     .history-table th { background: #f8f9fa; }
+    .pagination-info { margin: 15px 0; color: #6c757d; }
+    .pagination-controls { display: flex; justify-content: space-between; align-items: center; margin: 20px 0; }
+    .per-page-selector { display: flex; align-items: center; gap: 10px; }
   </style>
 </head>
 <body>
   <div class="d-flex" style="min-height:100vh">
     <script>
-  // If we’re inside an iframe, window.self !== window.top
+  // If we're inside an iframe, window.self !== window.top
   if (window.self !== window.top) {
     document.addEventListener('DOMContentLoaded', () => {
       // 1. Remove the sidebar element entirely
@@ -174,6 +206,11 @@ $conn->close();
         </div>
       </form>
 
+      <!-- Pagination Info -->
+      <div class="pagination-info">
+        Showing <?= $offset + 1 ?> to <?= min($offset + $per_page, $total_records) ?> of <?= $total_records ?> records
+      </div>
+
       <table class="history-table table table-striped">
         <thead>
           <tr>
@@ -202,11 +239,98 @@ $conn->close();
           <?php endif; ?>
         </tbody>
       </table>
+
+      <!-- Pagination Controls -->
+      <?php if ($total_pages > 1): ?>
+        <div class="pagination-controls">
+          <div class="per-page-selector">
+            <label for="per_page">Show:</label>
+            <select id="per_page" class="form-select" style="width: auto;" onchange="changePerPage(this.value)">
+              <option value="10" <?= $per_page == 10 ? 'selected' : '' ?>>10</option>
+              <option value="25" <?= $per_page == 25 ? 'selected' : '' ?>>25</option>
+              <option value="50" <?= $per_page == 50 ? 'selected' : '' ?>>50</option>
+            </select>
+            <span>records per page</span>
+          </div>
+          
+          <nav aria-label="Purchase history pagination">
+            <ul class="pagination mb-0">
+              <!-- Previous button -->
+              <?php if ($page > 1): ?>
+                <li class="page-item">
+                  <a class="page-link" href="<?= buildPaginationUrl($_GET, $page - 1, $per_page) ?>">
+                    <i class="fas fa-chevron-left"></i> Previous
+                  </a>
+                </li>
+              <?php else: ?>
+                <li class="page-item disabled">
+                  <span class="page-link">
+                    <i class="fas fa-chevron-left"></i> Previous
+                  </span>
+                </li>
+              <?php endif; ?>
+
+              <!-- Page numbers -->
+              <?php
+              $start_page = max(1, $page - 2);
+              $end_page = min($total_pages, $page + 2);
+              
+              if ($start_page > 1): ?>
+                <li class="page-item">
+                  <a class="page-link" href="<?= buildPaginationUrl($_GET, 1, $per_page) ?>">1</a>
+                </li>
+                <?php if ($start_page > 2): ?>
+                  <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                  </li>
+                <?php endif; ?>
+              <?php endif; ?>
+
+              <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                <li class="page-item <?= $i == $page ? 'active' : '' ?>">
+                  <a class="page-link" href="<?= buildPaginationUrl($_GET, $i, $per_page) ?>"><?= $i ?></a>
+                </li>
+              <?php endfor; ?>
+
+              <?php if ($end_page < $total_pages): ?>
+                <?php if ($end_page < $total_pages - 1): ?>
+                  <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                  </li>
+                <?php endif; ?>
+                <li class="page-item">
+                  <a class="page-link" href="<?= buildPaginationUrl($_GET, $total_pages, $per_page) ?>"><?= $total_pages ?></a>
+                </li>
+              <?php endif; ?>
+
+              <!-- Next button -->
+              <?php if ($page < $total_pages): ?>
+                <li class="page-item">
+                  <a class="page-link" href="<?= buildPaginationUrl($_GET, $page + 1, $per_page) ?>">
+                    Next <i class="fas fa-chevron-right"></i>
+                  </a>
+                </li>
+              <?php else: ?>
+                <li class="page-item disabled">
+                  <span class="page-link">
+                    Next <i class="fas fa-chevron-right"></i>
+                  </span>
+                </li>
+              <?php endif; ?>
+            </ul>
+          </nav>
+        </div>
+      <?php endif; ?>
     </div>
   </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
   <script>
-
+    function changePerPage(value) {
+      const urlParams = new URLSearchParams(window.location.search);
+      urlParams.set('per_page', value);
+      urlParams.set('page', '1'); // Reset to first page when changing per_page
+      window.location.href = window.location.pathname + '?' + urlParams.toString();
+    }
   </script>
 </body>
 </html>

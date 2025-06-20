@@ -133,7 +133,7 @@ if ($res) {
 // 8) Alerts
 $alerts = [];
 if ($total_used > 0.9 * $total_allocated) {
-    $alerts[] = "⚠️ You’ve used over 90% of your procurement budget.";
+    $alerts[] = "⚠️ You've used over 90% of your procurement budget.";
 }
 if ($low_count > 0) {
     $alerts[] = "⚠️ {$low_count} low-stock item(s) detected.";
@@ -171,7 +171,7 @@ $conn->close();
   }
   </script>
   <div class="sidebar">
-    <h4>Procurement Panel</h4>
+    <h2>Procurement Panel</h2>
     <?php $cur = basename($_SERVER['PHP_SELF']); ?>
     <a href="procurement_staff_dashboard.php" class="<?= $cur==='procurement_staff_dashboard.php'?'active':'' ?>"><i class="fas fa-truck"></i> Dashboard</a>
     <a href="stock_procurement.php"               class="<?= $cur==='stock_procurement.php'?'active':'' ?>"><i class="fas fa-box"></i> Stock/Inventory</a>
@@ -189,11 +189,9 @@ $conn->close();
         ['Allocated', $total_allocated],
         ['Used',      $total_used],
         ['Balance',   $balance],
-        ['Avg Cost/Purchase', $avg_cost],
         ['Low-Stock Items',   $low_count],
-        ['Inv Turnover (yr)',  $turnover],
       ] as $st): ?>
-      <div class="col-md-2">
+      <div class="col-md-3">
         <div class="stat-card">
           <h6><?= $st[0] ?></h6>
           <p class="fs-5 fw-bold"><?php

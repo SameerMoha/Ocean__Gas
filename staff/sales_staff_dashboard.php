@@ -388,20 +388,7 @@ $conn->close();
                   </p>
               </div>
           </div>
-          <!-- Pending Sales (Clickable Card) -->
-          <div class="col-md-3">
-              <a 
-                href="/OceanGas/staff/pending_sales.php" 
-                style="text-decoration: none; color: inherit;"
-              >
-                <div class="card p-3 text-center shadow-sm">
-                  <h5>Pending Sales</h5>
-                  <p class="display-6">
-                    <?php echo number_format($pending_sales); ?>
-                  </p>
-                </div>
-              </a>
-          </div>
+          
       </div>
       
       <!-- KPI Charts Section -->

@@ -9,57 +9,73 @@ if (!isset($_SESSION['staff_username']) || !isset($_SESSION['staff_role'])) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $order_id = $_POST["order_id"];
     $delivery_date = $_POST["delivery_date"];
     $assigned_to = $_POST["assigned_to"];
     $notes = $_POST["notes"];
+    $source = $_POST["source"] ?? 'order'; // 'order' or 'invoice'
 
-    // Prevent duplicate deliveries
-    $check = $conn->prepare("SELECT * FROM deliveries WHERE order_id = ?");
-    $check->bind_param("i", $order_id);
+    // Determine which key to use
+    $order_id = isset($_POST["order_id"]) ? $_POST["order_id"] : null;
+
+    // Check if delivery already exists
+    if ($source === 'invoice') {
+        $check = $conn->prepare("SELECT * FROM deliveries WHERE order_id = ?");
+        $check->bind_param("i", $order_number);
+    }
+    
     $check->execute();
     $result = $check->get_result();
 
     if ($result->num_rows > 0) {
-        echo "<script>alert('A delivery for this order already exists.'); window.location.href='add_delivery.php';</script>";
+        echo "<script>alert('A delivery for this order already exists.'); window.location.href='add_delivery.php?filter=$source';</script>";
         exit();
     }
 
-    // Start transaction to ensure both operations succeed
+    // Start transaction
     $conn->begin_transaction();
-    
+
     try {
-        // Insert delivery record
-        $stmt = $conn->prepare("INSERT INTO deliveries (order_id, assigned_to, delivery_date, notes) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("isss", $order_id, $assigned_to, $delivery_date, $notes);
+        // Insert into deliveries
+        $stmt = $conn->prepare("INSERT INTO deliveries (order_id,  assigned_to, delivery_date, notes) 
+                                VALUES (?,  ?, ?, ?)");
+        $stmt->bind_param("isss", $order_id,  $assigned_to, $delivery_date, $notes);
         $stmt->execute();
-        
-        // Optional: Update order status to 'out_for_delivery' or 'processing'
-        // Uncomment the lines below if you want to change order status:
-        // $updateStmt = $conn->prepare("UPDATE orders SET order_status = 'out_for_delivery' WHERE order_id = ?");
-        // $updateStmt->bind_param("i", $order_id);
-        // $updateStmt->execute();
-        
-        // Commit transaction
+
+        // Optional: update order status
+        // if ($source === 'order') {
+        //     $updateStmt = $conn->prepare("UPDATE orders SET order_status = 'out_for_delivery' WHERE order_id = ?");
+        //     $updateStmt->bind_param("i", $order_id);
+        //     $updateStmt->execute();
+        // }
+
         $conn->commit();
-        
-        echo "<script>alert('Delivery added successfully!'); </script>";
-        
-        // Redirect based on user role
+
+        echo "<script>alert('Delivery added successfully!');</script>";
         if ($_SESSION['staff_role'] === 'sales') {
             echo "<script>window.location.href='view_delivery_sales.php';</script>";
         } else {
             echo "<script>window.location.href='view_deliveries.php';</script>";
         }
         exit();
-        
+
     } catch (Exception $e) {
-        // Rollback transaction on error
         $conn->rollback();
         echo "<script>alert('Error adding delivery. Please try again.');</script>";
     }
 }
 
+ $filter = isset($_GET['filter']) && $_GET['filter'] === 'invoice'
+                ? 'invoice'
+                : 'all';
+                $invoiceOrders = [];
+$invoiceQuery = "SELECT DISTINCT order_number, customer_name, total_amount, sale_date, order_id
+                 FROM sales_record 
+                 WHERE order_number LIKE 'ORD%' 
+                   ";
+$invoiceResult = mysqli_query($conn, $invoiceQuery);
+while ($row = mysqli_fetch_assoc($invoiceResult)) {
+    $invoiceOrders[] = $row;
+}
 ?>
 
 <!DOCTYPE html>
@@ -120,6 +136,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             margin-left: 270px;
             padding: 30px;
             flex-grow: 1;
+        }
+        .filter-btn {
+            margin-right: 10px;
+        }
+        .filter-btn.active {
+            font-weight: bold;
         }
     </style>
 </head>
@@ -230,9 +252,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   src="/OceanGas/staff/procurement_staff_dashboard.php?embedded=1"
   style="display:none; width:100%; height:1500px; border:none;"
 ></iframe>
+<?php if ($filter === 'all'): ?>
 <div id="mainContent">
+   
     <h2 class="mb-4">Add Delivery</h2>
-
+ <!-- Toggle buttons -->
+        <div class="mb-3">
+            <a href="add_delivery.php?filter=all"
+               class="btn filter-btn <?= $filter === 'all' ? 'btn-primary active' : 'btn-outline-primary' ?>">
+               All Deliveries
+            </a>
+            <a href="add_delivery.php?filter=invoice"
+               class="btn filter-btn <?= $filter === 'invoice' ? 'btn-primary active' : 'btn-outline-primary' ?>">
+               Invoice Deliveries
+            </a>
+        </div>
 <?php
 // Get all customers who have confirmed orders
 $customers = [];
@@ -344,7 +378,80 @@ while ($row = mysqli_fetch_assoc($result)) {
     </form>
 </div>
 </div>
+<?php endif; ?>
+<?php if ($filter === 'invoice'): ?>
+    <form method="POST" action="add_delivery.php">
 
+    <h2 class="mb-4">Add Delivery</h2>
+<!-- Toggle buttons -->
+        <div class="mb-3">
+            <a href="add_delivery.php?filter=all"
+               class="btn filter-btn <?= $filter === 'all' ? 'btn-primary active' : 'btn-outline-primary' ?>">
+               All Deliveries
+            </a>
+            <a href="add_delivery.php?filter=invoice"
+               class="btn filter-btn <?= $filter === 'invoice' ? 'btn-primary active' : 'btn-outline-primary' ?>">
+               Invoice Deliveries
+            </a>
+        </div>
+        <div class="mb-3">
+            <label for="invoice_order_number" class="form-label">Select Invoice Order</label>
+            <select name="order_number" id="invoice_order_number" class="form-control" required onchange="showInvoiceDetails()">
+                <option value="">-- Select Invoice Order --</option>
+                <?php foreach ($invoiceOrders as $order): ?>
+                    <option value="<?= htmlspecialchars($order['order_number']) ?>"
+                            data-summary="<?= htmlspecialchars($order['customer_name']) ?>"
+                            data-amount="<?= $order['total_amount'] ?>"
+                            data-date="<?= $order['sale_date'] ?>">
+                        <?= htmlspecialchars($order['order_number']) ?> - <?= htmlspecialchars($order['customer_name']) ?> (KES <?= number_format($order['total_amount'], 2) ?>)
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <!-- Display details -->
+        <div id="invoice-details" class="mb-3" style="display: none;">
+            <div class="card">
+                <div class="card-header">Invoice Details</div>
+                <div class="card-body">
+                    <p><strong>Customer:</strong> <span id="inv-customer-name"></span></p>
+                    <p><strong>Sale Date:</strong> <span id="inv-sale-date"></span></p>
+                    <p><strong>Total Amount:</strong> KES <span id="inv-total-amount"></span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assign To -->
+        <div class="mb-3">
+            <label for="assigned_to" class="form-label">Assign To:</label>
+            <select class="form-control" name="assigned_to" required>
+                <option value="">-- Select Driver --</option>
+                <option value="Kevin">Kevin</option>
+                <option value="Joe">Joe</option>
+                <option value="Sarah">Sarah</option>
+                <option value="John">John</option>
+                <option value="Yusra">Yusra</option>
+            </select>
+        </div>
+
+        <!-- Delivery Date -->
+        <div class="mb-3">
+            <label for="delivery_date" class="form-label">Delivery Date</label>
+            <input type="date" name="delivery_date" class="form-control" required min="<?= date('Y-m-d') ?>">
+        </div>
+
+        <!-- Notes -->
+        <div class="mb-3">
+            <label for="notes" class="form-label">Notes</label>
+            <textarea name="notes" class="form-control" placeholder="Delivery notes..."></textarea>
+        </div>
+
+        <input type="hidden" name="source" value="invoice">
+
+        <button type="submit" class="btn btn-primary">Add Delivery</button>
+        <a href="view_deliveries.php" class="btn btn-secondary">Cancel</a>
+    </form>
+<?php endif; ?>
 <script>
 // Store all orders data for filtering
 const allOrders = <?= json_encode($confirmedOrders) ?>;
@@ -451,6 +558,21 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 });
+function showInvoiceDetailm ms() {
+    const select = document.getElementById('invoice_order_number');
+    const selected = select.options[select.selectedIndex];
+
+    if (selected && selected.value) {
+        document.getElementById('inv-customer-name').textContent = selected.getAttribute('data-summary');
+        document.getElementById('inv-sale-date').textContent = new Date(selected.getAttribute('data-date')).toLocaleDateString();
+        document.getElementById('inv-total-amount').textContent = parseFloat(selected.getAttribute('data-amount')).toLocaleString();
+
+        document.getElementById('invoice-details').style.display = 'block';
+    } else {
+        document.getElementById('invoice-details').style.display = 'none';
+    }
+        document.getElementById('inv-sale-date').textContent = new Date(selected.getAttribute('data-date')).toLocaleDateString();
+}oooo
 </script>
 </body>
 </html>
