@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 23, 2025 at 04:35 PM
+-- Generation Time: Jun 22, 2025 at 07:21 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -45,7 +45,7 @@ CREATE TABLE `customers` (
 
 INSERT INTO `customers` (`cust_id`, `F_name`, `L_name`, `Email`, `Phone_number`, `pass`, `created_at`, `delivery_location`, `apartment_number`) VALUES
 (1, 'bla', 'bla', 'bla@gmail.com', '024802840', '$2y$10$5KrAyDX7HZznGphQF4D4Je6luFWINZtRp61y64ONIdvIc3yeXC7lu', '2025-03-20 09:53:00', 'Nairobi', '99'),
-(2, 'james', 'jones', 'james@gmail.com', '0727590770', '$2y$10$5xLSB2yk0j0v2xWbYFOFtO6Y6SG4iMgnlpw40HwjeIyv/HWqwXGua', '2025-04-09 07:52:26', NULL, NULL),
+(2, 'james', 'jones', 'james@gmail.com', '0727590770', '$2y$10$5xLSB2yk0j0v2xWbYFOFtO6Y6SG4iMgnlpw40HwjeIyv/HWqwXGua', '2025-04-09 07:52:26', 'Nairobi', '300'),
 (3, 'ATHMAN', 'ALI', 'athman@gmail.com', '0727590770', '$2y$10$pkCn3hV1WjkPaOkHorrpve0W.r5ViEfh71GHXcOWk3tflM/ROZBxy', '2025-04-23 13:48:45', NULL, NULL),
 (5, 'AMARA', 'JONES', 'amara@gmail.com', '0727590770', '$2y$10$SbiSWdNcu/8Z0ul/SAGzu.yXFhefHKQxNIi5SY3twBSIrCaQ8aH8K', '2025-05-05 07:13:52', NULL, NULL);
 
@@ -57,8 +57,8 @@ INSERT INTO `customers` (`cust_id`, `F_name`, `L_name`, `Email`, `Phone_number`,
 
 CREATE TABLE `deliveries` (
   `delivery_id` int(11) NOT NULL,
-  `order_id` int(11) NOT NULL,
-  `delivery_status` varchar(50) DEFAULT 'Pending',
+  `order_id` int(11) DEFAULT NULL,
+  `delivery_status` varchar(50) DEFAULT 'In Transit',
   `delivery_date` date DEFAULT NULL,
   `assigned_to` varchar(100) DEFAULT NULL,
   `notes` text DEFAULT NULL,
@@ -70,18 +70,88 @@ CREATE TABLE `deliveries` (
 --
 
 INSERT INTO `deliveries` (`delivery_id`, `order_id`, `delivery_status`, `delivery_date`, `assigned_to`, `notes`, `created_at`) VALUES
-(1, 1, 'Pending', '2025-05-14', 'Kevin', 'Rough terrain and alot of rain \r\n', '2025-05-14 08:34:46'),
-(3, 2, 'Pending', '2025-05-14', 'Joe', 'extremely hot weather ', '2025-05-14 11:59:55'),
-(4, 2, 'Pending', '2025-05-14', 'Joe', 'extremely hot weather ', '2025-05-14 12:01:01'),
-(5, 3, 'Pending', '2025-05-14', 'Sarah', 'rough road \r\n', '2025-05-14 12:06:34'),
-(6, 3, 'Pending', '2025-05-14', 'Sarah', 'rough road \r\n', '2025-05-14 12:06:43'),
-(7, 9, 'Pending', '2025-05-15', 'John', 'blah\r\n', '2025-05-14 12:07:52'),
-(9, 10, 'Pending', '2025-05-16', 'Yusra', 'leave it at the door it is safe \r\n', '2025-05-14 12:28:49'),
+(1, 1, 'In Transit', '2025-05-14', 'Kevin', 'Rough terrain and alot of rain \r\n', '2025-05-14 08:34:46'),
+(3, 2, 'In Transit', '2025-05-14', 'Joe', 'extremely hot weather ', '2025-05-14 11:59:55'),
+(4, 2, 'In Transit', '2025-05-14', 'Joe', 'extremely hot weather ', '2025-05-14 12:01:01'),
+(5, 3, 'In Transit', '2025-05-14', 'Sarah', 'rough road \r\n', '2025-05-14 12:06:34'),
+(6, 3, 'In Transit', '2025-05-14', 'Sarah', 'rough road \r\n', '2025-05-14 12:06:43'),
+(7, 9, 'In Transit', '2025-05-15', 'John', 'blah\r\n', '2025-05-14 12:07:52'),
+(9, 10, 'In Transit', '2025-05-16', 'Yusra', 'leave it at the door it is safe \r\n', '2025-05-14 12:28:49'),
 (10, 12, 'Delivered', '2025-05-16', 'Sarah', 'Don\'t be late ', '2025-05-14 15:48:40'),
-(11, 11, 'Pending', '2025-05-24', 'Sarah', 'n', '2025-05-23 07:37:33'),
-(12, 13, 'Pending', '2025-05-24', 'Kevin', '', '2025-05-23 08:07:09'),
-(13, 18, 'Pending', '2025-05-29', 'Yusra', 'Leave at door', '2025-05-23 08:19:46'),
-(14, 85, 'Cancelled', '2025-05-31', 'Sarah', '', '2025-05-23 12:56:14');
+(11, 11, 'In Transit', '2025-05-24', 'Sarah', 'n', '2025-05-23 07:37:33'),
+(12, 13, 'In Transit', '2025-05-24', 'Kevin', '', '2025-05-23 08:07:09'),
+(13, 18, 'In Transit', '2025-05-29', 'Yusra', 'Leave at door', '2025-05-23 08:19:46'),
+(14, 85, 'Cancelled', '2025-05-31', 'Sarah', '', '2025-05-23 12:56:14'),
+(15, 70, 'Cancelled', '2025-05-31', 'Kevin', '', '2025-05-26 06:47:18'),
+(16, 86, 'In Transit', '2025-05-30', 'Kevin', '', '2025-05-26 07:06:37'),
+(17, 52, 'Delivered', '2025-05-28', 'Kevin', '', '2025-05-27 06:14:33'),
+(18, 87, 'Cancelled', '2025-06-07', 'Yusra', '', '2025-05-27 06:38:24'),
+(19, 28, 'Delivered', '2025-05-30', 'Kevin', '', '2025-05-29 06:33:45'),
+(20, 84, 'In Transit', '2025-05-30', 'Joe', '', '2025-05-29 06:34:56'),
+(21, 45, 'In Transit', '2025-06-04', 'Kevin', '', '2025-06-03 08:06:45'),
+(22, 82, 'In Transit', '2025-06-27', 'Sarah', '', '2025-06-10 08:25:45'),
+(24, 93, 'Delivered', '2025-07-12', 'Kevin', '', '2025-06-11 07:03:45'),
+(25, 94, 'Delivered', '2025-06-18', 'Kevin', '', '2025-06-17 08:37:41'),
+(26, 81, 'Delivered', '2025-06-25', 'Kevin', '', '2025-06-17 09:29:27'),
+(27, 95, 'In Transit', '2025-06-17', 'Joe', '', '2025-06-17 11:02:30'),
+(28, 96, 'Delivered', '2025-06-17', 'Kevin', '', '2025-06-17 11:07:48'),
+(29, 97, 'Delivered', '2025-06-26', 'Yusra', '', '2025-06-17 11:29:43'),
+(30, 89, 'Delivered', '2025-06-25', 'Yusra', '', '2025-06-17 11:32:32'),
+(31, 92, 'In Transit', '2025-06-18', 'Kevin', 'n ', '2025-06-17 12:50:04'),
+(32, 98, 'Delivered', '2025-06-19', 'Joe', '', '2025-06-18 06:42:50'),
+(33, 99, 'Delivered', '2025-06-28', 'Kevin', '', '2025-06-18 06:49:51'),
+(34, 100, 'Delivered', '2025-06-20', 'Kevin', '', '2025-06-18 06:56:25'),
+(35, 101, 'Delivered', '2025-06-19', 'Kevin', '', '2025-06-18 07:00:22'),
+(36, 102, 'Delivered', '2025-06-19', 'Kevin', '', '2025-06-18 08:06:01'),
+(37, 103, 'Delivered', '2025-06-20', 'Kevin', '', '2025-06-19 06:16:53'),
+(38, 104, 'Delivered', '2025-06-26', 'Kevin', '', '2025-06-19 07:00:48'),
+(39, 105, 'Delivered', '2025-06-20', 'Kevin', '', '2025-06-19 07:15:44'),
+(40, 106, 'Delivered', '2025-07-12', 'Sarah', '', '2025-06-19 08:11:42'),
+(41, 107, 'Delivered', '2025-06-26', 'Joe', '', '2025-06-19 09:01:06'),
+(42, 108, 'Delivered', '2025-09-09', 'Joe', '', '2025-06-19 11:16:21'),
+(43, 109, 'Delivered', '2025-06-26', 'Kevin', '', '2025-06-19 11:42:57'),
+(44, 110, 'Delivered', '2025-06-27', 'Joe', '', '2025-06-19 12:55:08'),
+(45, 117, 'Delivered', '2025-06-20', 'Sarah', '', '2025-06-20 12:18:09'),
+(46, 118, 'Delivered', '2025-06-20', 'Kevin', '', '2025-06-20 12:42:26'),
+(47, 73, 'In Transit', '2025-06-20', 'Sarah', '', '2025-06-20 12:43:44');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `financial_transactions`
+--
+
+CREATE TABLE `financial_transactions` (
+  `transaction_id` int(11) NOT NULL,
+  `order_id` int(11) DEFAULT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `transaction_type` varchar(20) NOT NULL,
+  `status` varchar(20) NOT NULL,
+  `transaction_date` datetime NOT NULL DEFAULT current_timestamp(),
+  `notes` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `financial_transactions`
+--
+
+INSERT INTO `financial_transactions` (`transaction_id`, `order_id`, `amount`, `transaction_type`, `status`, `transaction_date`, `notes`) VALUES
+(1, 97, 5900.00, 'return', 'approved', '2025-06-17 14:31:37', 'nnnn'),
+(2, 101, 3400.00, 'return', 'approved', '2025-06-18 10:59:24', 'd'),
+(3, 100, 5700.00, 'return', 'approved', '2025-06-18 11:03:00', 'nn'),
+(4, 102, 4600.00, 'return', 'approved', '2025-06-18 11:09:57', 'yes'),
+(5, 103, 2300.00, 'return', 'approved', '2025-06-19 09:23:53', 'mm'),
+(6, 106, 2300.00, 'return', 'approved', '2025-06-19 11:57:49', 'j'),
+(7, 107, 2300.00, 'return', 'approved', '2025-06-19 14:13:38', 'm'),
+(8, 28, 2300.00, 'return', 'approved', '2025-06-19 14:13:43', 'mm'),
+(9, 105, 1200.00, 'return', 'approved', '2025-06-19 14:13:52', 'kk'),
+(10, 104, 1100.00, 'return', 'approved', '2025-06-19 14:13:59', 'mml'),
+(11, 99, 3400.00, 'return', 'approved', '2025-06-19 14:14:07', 'll'),
+(12, 98, 3500.00, 'return', 'approved', '2025-06-19 14:14:18', 'ik'),
+(13, 108, 1200.00, 'return', 'approved', '2025-06-19 14:21:16', 'yes'),
+(14, 110, 1200.00, 'return', 'approved', '2025-06-19 15:57:01', 'nnn'),
+(15, 117, 2300.00, 'return', 'approved', '2025-06-20 15:24:06', 'saeed'),
+(16, 118, 2300.00, 'return', 'approved', '2025-06-20 16:12:08', 'app');
 
 -- --------------------------------------------------------
 
@@ -164,7 +234,11 @@ INSERT INTO `funds` (`id`, `source_type`, `funds_in`, `funds_out`, `transaction_
 (83, 'allocation', 1000.00, 0.00, '2025-05-20 06:57:58', NULL, ''),
 (84, 'deduction', 0.00, 900.00, '2025-05-20 07:12:39', '24', 'Purchase of 1×Hashi Gas 6kg'),
 (85, 'deduction', 0.00, 750.00, '2025-05-20 07:23:46', '24', 'Purchase of 1×K-Gas 6kg'),
-(86, 'deduction', 0.00, 10000.00, '2025-05-23 13:33:02', '24', 'Purchase of 10×K-Gas 12kg');
+(86, 'deduction', 0.00, 10000.00, '2025-05-23 13:33:02', '24', 'Purchase of 10×K-Gas 12kg'),
+(87, 'deduction', 0.00, 10000.00, '2025-06-03 07:35:46', '24', 'Purchase of 10×K-Gas 12kg'),
+(88, 'deduction', 0.00, 12000.00, '2025-06-03 07:36:05', '24', 'Purchase of 6×Luqman Gas 12kg'),
+(89, 'deduction', 0.00, 22000.00, '2025-06-03 07:36:20', '24', 'Purchase of 11×ProGas 12kg'),
+(90, 'deduction', 0.00, 6000.00, '2025-06-10 12:07:04', '29', 'Purchase of 4×Total Gas 12kg');
 
 -- --------------------------------------------------------
 
@@ -199,11 +273,14 @@ INSERT INTO `inquiries_and_reviews` (`id`, `name`, `email`, `location`, `company
 (13, NULL, NULL, NULL, NULL, 'no\r\n', '2025-04-28 07:15:50', 1, 'open', NULL, NULL, NULL, NULL),
 (17, NULL, NULL, NULL, NULL, 'hi', '2025-05-05 11:00:48', 1, 'open', NULL, NULL, NULL, NULL),
 (18, 'heee', 'iiiiiiiiiiiiiiiiii@y.com', 'ihihi', 'ihi', 'l;ih', '2025-05-05 12:06:37', NULL, 'open', NULL, NULL, NULL, NULL),
-(19, NULL, NULL, NULL, NULL, 'nnnnnnnnnnnnnnnnnnnnnnnnnnnn', '2025-05-06 08:51:48', 1, 'open', NULL, NULL, NULL, NULL),
+(19, NULL, NULL, NULL, NULL, 'nnnnnnnnnnnnnnnnnnnnnnnnnnnn', '2025-05-06 08:51:48', 1, 'closed', NULL, NULL, NULL, NULL),
 (20, 'bla bla', 'bla@gmail.com', NULL, NULL, NULL, '2025-05-06 11:08:19', 1, 'open', 5, 'j', '2025-05-06 14:08:19', 'Total Gas 12kg'),
 (21, 'bla bla', 'bla@gmail.com', NULL, NULL, NULL, '2025-05-06 11:27:38', 1, 'open', 4, 's', '2025-05-06 14:27:38', 'Shell Afrigas 12kg'),
 (22, 'bla bla', 'bla@gmail.com', NULL, NULL, NULL, '2025-05-06 12:08:38', 1, 'open', 5, 'w', '2025-05-06 15:08:38', 'Shell Afrigas 12kg'),
-(23, 'bla bla', 'bla@gmail.com', NULL, NULL, NULL, '2025-05-06 12:12:14', 1, 'open', 5, 'w', '2025-05-06 15:12:14', 'Shell Afrigas 12kg');
+(23, 'bla bla', 'bla@gmail.com', NULL, NULL, NULL, '2025-05-06 12:12:14', 1, 'open', 5, 'w', '2025-05-06 15:12:14', 'Shell Afrigas 12kg'),
+(24, 'bla bla', 'bla@gmail.com', NULL, NULL, NULL, '2025-06-20 13:23:48', 1, 'open', 5, 'johnnie', '2025-06-20 16:23:48', 'K-Gas 12kg'),
+(25, 'bla bla', 'bla@gmail.com', NULL, NULL, NULL, '2025-06-20 14:29:12', 1, 'open', 4, 'luq', '2025-06-20 17:29:12', 'Luqman Gas 6kg'),
+(26, 'bla bla', 'bla@gmail.com', NULL, NULL, NULL, '2025-06-20 14:31:00', 1, 'open', 4, 'luq', '2025-06-20 17:31:00', 'Luqman Gas 6kg');
 
 -- --------------------------------------------------------
 
@@ -298,7 +375,7 @@ INSERT INTO `orders` (`order_id`, `invoice_summary`, `total_amount`, `order_date
 (67, '1 X K-Gas 12kg', 2300, '2025-05-02 11:47:49', '56842099', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Nairobi\",\"apartment\":\"\"}', 0),
 (68, '1 X Shell Afrigas 6kg', 0, '2025-05-02 12:00:17', '10276126', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Eldoret\",\"apartment\":\"s\"}', 0),
 (69, '1 X Shell Afrigas 6kg', 1200, '2025-05-02 12:03:57', '63972859', 'pending', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Eldoret\",\"apartment\":\"s\"}', 0),
-(70, '1 X Total Gas 6kg', 1200, '2025-05-02 12:04:17', '18628604', 'pending', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Machakos\",\"apartment\":\"1\"}', 0),
+(70, '1 X Total Gas 6kg', 1200, '2025-05-02 12:04:17', '18628604', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Machakos\",\"apartment\":\"1\"}', 0),
 (71, '1 X Total Gas 6kg, 1 X Total Gas 12kg', 3500, '2025-05-02 15:35:43', '23083976', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Nakuru\",\"apartment\":\"\"}', 0),
 (72, '1 X K-Gas 12kg', 2300, '2025-05-02 15:48:50', '17916396', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Limuru\",\"apartment\":\"\"}', 0),
 (73, '1 X Total Gas 6kg', 1200, '2025-05-05 10:11:22', '71091118', 'confirmed', 3, '{\"name\":\"ATHMAN ALI\",\"email\":\"athman@gmail.com\",\"phone\":\"0727590770\"}', '{\"address\":\"Naivasha\",\"apartment\":\"\"}', 0),
@@ -313,7 +390,40 @@ INSERT INTO `orders` (`order_id`, `invoice_summary`, `total_amount`, `order_date
 (82, '1 X ProGas 12kg', 2300, '2025-05-13 10:08:52', '49300023', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Mombasa\",\"apartment\":\"\"}', 0),
 (83, '1 X Luqman Gas 6kg', 1200, '2025-05-14 15:43:32', '21154009', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Nairobi\",\"apartment\":\"\"}', 0),
 (84, '1 X K-Gas 12kg', 2300, '2025-05-15 11:09:29', '71212829', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Mombasa\",\"apartment\":\"3\"}', 0),
-(85, '1 X Total Gas 12kg', 2400, '2025-05-19 14:05:33', '52142541', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Limuru\",\"apartment\":\"\"}', 0);
+(85, '1 X Total Gas 12kg', 2400, '2025-05-19 14:05:33', '52142541', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Limuru\",\"apartment\":\"\"}', 0),
+(86, '1 X K-Gas 6kg', 1100, '2025-05-26 10:05:12', '14112247', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Thika\",\"apartment\":\"100\"}', 0),
+(87, '1 X Total Gas 12kg', 2400, '2025-05-27 09:36:29', '35289644', 'confirmed', 2, '{\"name\":\"james jones\",\"email\":\"james@gmail.com\",\"phone\":\"0727590770\"}', '{\"address\":\"Machakos\",\"apartment\":\"ppppp\"}', 0),
+(88, '1 X K-Gas 12kg', 2300, '2025-05-29 09:38:15', '97427209', 'confirmed', 2, '{\"name\":\"james jones\",\"email\":\"james@gmail.com\",\"phone\":\"0727590770\"}', '{\"address\":\"Nairobi\",\"apartment\":\"\"}', 0),
+(89, '3 X K-Gas 12kg', 6900, '2025-06-04 11:24:27', '14421486', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Nakuru\",\"apartment\":\"\"}', 0),
+(90, '1 X Total Gas 12kg', 2400, '2025-06-04 11:26:44', '75366197', 'pending', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Limuru\",\"apartment\":\"\"}', 0),
+(91, '1 X K-Gas 12kg', 2300, '2025-06-10 14:29:02', '55362271', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Machakos\",\"apartment\":\"\"}', 0),
+(92, '1 X Luqman Gas 12kg', 2300, '2025-06-10 14:34:42', '87964617', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Mombasa\",\"apartment\":\"\"}', 0),
+(93, '1 X K-Gas 12kg', 2300, '2025-06-10 15:05:46', '42882645', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Eldoret\",\"apartment\":\"\"}', 0),
+(94, '3 X K-Gas 12kg', 6900, '2025-06-17 11:35:49', '25692107', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Kisumu\",\"apartment\":\"\"}', 0),
+(95, '2 X K-Gas 12kg, 2 X Total Gas 12kg', 9400, '2025-06-17 14:00:25', '77468970', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Mombasa\",\"apartment\":\"\"}', 0),
+(96, '2 X K-Gas 12kg, 2 X Total Gas 12kg', 9400, '2025-06-17 14:06:47', '60145250', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Kisumu\",\"apartment\":\"\"}', 0),
+(97, '1 X Total Gas 12kg, 1 X K-Gas 12kg, 1 X Shell Afrigas 6kg', 5900, '2025-06-17 14:27:34', '79117124', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Nakuru\",\"apartment\":\"\"}', 0),
+(98, '2 X K-Gas 6kg, 2 X Total Gas 6kg, 2 X Hashi Gas 6kg', 7000, '2025-06-18 09:40:54', '18502263', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Kisumu\",\"apartment\":\"\"}', 0),
+(99, '1 X K-Gas 6kg, 1 X K-Gas 12kg', 3400, '2025-06-18 09:49:00', '74189781', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Mombasa\",\"apartment\":\"\"}', 0),
+(100, '1 X K-Gas 12kg, 1 X K-Gas 6kg, 1 X ProGas 12kg', 5700, '2025-06-18 09:55:31', '38933420', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Nairobi\",\"apartment\":\"\"}', 0),
+(101, '2 X K-Gas 12kg, 2 X K-Gas 6kg', 6800, '2025-06-18 09:59:18', '94943779', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Naivasha\",\"apartment\":\"\"}', 0),
+(102, '1 X Total Gas 6kg, 1 X K-Gas 6kg, 1 X K-Gas 12kg', 4600, '2025-06-18 11:04:36', '98090757', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Kisumu\",\"apartment\":\"\"}', 0),
+(103, '3 X K-Gas 12kg', 6900, '2025-06-19 09:16:00', '40285934', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Kisumu\",\"apartment\":\"\"}', 0),
+(104, '3 X K-Gas 6kg', 3300, '2025-06-19 09:59:21', '62328139', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Machakos\",\"apartment\":\"\"}', 0),
+(105, '3 X Shell Afrigas 6kg', 3600, '2025-06-19 10:14:48', '84432582', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Nairobi\",\"apartment\":\"\"}', 0),
+(106, '1 X K-Gas 12kg', 2300, '2025-06-19 11:10:36', '89845941', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Eldoret\",\"apartment\":\"\"}', 0),
+(107, '3 X Luqman Gas 12kg', 6900, '2025-06-19 11:59:59', '58174424', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Limuru\",\"apartment\":\"\"}', 0),
+(108, '3 X Shell Afrigas 6kg', 3600, '2025-06-19 14:15:25', '42280934', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Mombasa\",\"apartment\":\"\"}', 0),
+(109, '3 X Hashi Gas 12kg', 6900, '2025-06-19 14:41:45', '15895888', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Eldoret\",\"apartment\":\"\"}', 0),
+(110, '3 X Total Gas 6kg', 3600, '2025-06-19 15:54:30', '74607564', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Nakuru\",\"apartment\":\"\"}', 0),
+(111, '2 X Hashi Gas 12kg', 4600, '2025-06-20 09:43:13', '66768490', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Kisumu\",\"apartment\":\"\"}', 0),
+(112, '2 X Hashi Gas 12kg', 4600, '2025-06-20 09:43:28', '81787422', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Kisumu\",\"apartment\":\"\"}', 0),
+(113, '1 X K-Gas 12kg', 2300, '2025-06-20 10:28:53', '12454339', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Kisumu\",\"apartment\":\"s\"}', 0),
+(114, '1 X K-Gas 12kg', 2300, '2025-06-20 10:36:14', '82722981', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Machakos\",\"apartment\":\"\"}', 0),
+(115, '1 X K-Gas 12kg', 2300, '2025-06-20 10:41:46', '99953543', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Mombasa\",\"apartment\":\"\"}', 0),
+(116, '1 X K-Gas 12kg', 2300, '2025-06-20 10:55:15', '84703162', 'new', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Thika\",\"apartment\":\"\"}', 1),
+(117, '2 X K-Gas 12kg, 2 X Shell Afrigas 6kg', 7000, '2025-06-20 15:17:12', '78051130', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Kisumu\",\"apartment\":\"\"}', 0),
+(118, '4 X K-Gas 12kg', 9200, '2025-06-20 15:41:50', '82109616', 'confirmed', 1, '{\"name\":\"bla bla\",\"email\":\"bla@gmail.com\",\"phone\":\"024802840\"}', '{\"address\":\"Nakuru\",\"apartment\":\"\"}', 0);
 
 -- --------------------------------------------------------
 
@@ -580,7 +690,87 @@ INSERT INTO `order_items` (`order_item_id`, `order_id`, `product_id`, `quantity`
 (243, 82, 12, 1, 2300.00, 'ProGas 12kg'),
 (244, 83, 20, 1, 1200.00, 'Luqman Gas 6kg'),
 (245, 84, 2, 1, 2300.00, 'K-Gas 12kg'),
-(246, 85, 3, 1, 2400.00, 'Total Gas 12kg');
+(246, 85, 3, 1, 2400.00, 'Total Gas 12kg'),
+(247, 86, 5, 1, 1100.00, 'K-Gas 6kg'),
+(248, 87, 3, 1, 2400.00, 'Total Gas 12kg'),
+(249, 88, 2, 1, 2300.00, 'K-Gas 12kg'),
+(250, 89, 2, 1, 2300.00, 'K-Gas 12kg'),
+(251, 89, 2, 1, 2300.00, 'K-Gas 12kg'),
+(252, 89, 2, 1, 2300.00, 'K-Gas 12kg'),
+(253, 90, 3, 1, 2400.00, 'Total Gas 12kg'),
+(254, 91, 2, 1, 2300.00, 'K-Gas 12kg'),
+(255, 92, 21, 1, 2300.00, 'Luqman Gas 12kg'),
+(256, 93, 2, 1, 2300.00, 'K-Gas 12kg'),
+(257, 94, 2, 1, 2300.00, 'K-Gas 12kg'),
+(258, 94, 2, 1, 2300.00, 'K-Gas 12kg'),
+(259, 94, 2, 1, 2300.00, 'K-Gas 12kg'),
+(260, 95, 2, 1, 2300.00, 'K-Gas 12kg'),
+(261, 95, 2, 1, 2300.00, 'K-Gas 12kg'),
+(262, 95, 3, 1, 2400.00, 'Total Gas 12kg'),
+(263, 95, 3, 1, 2400.00, 'Total Gas 12kg'),
+(264, 96, 2, 1, 2300.00, 'K-Gas 12kg'),
+(265, 96, 2, 1, 2300.00, 'K-Gas 12kg'),
+(266, 96, 3, 1, 2400.00, 'Total Gas 12kg'),
+(267, 96, 3, 1, 2400.00, 'Total Gas 12kg'),
+(268, 97, 3, 1, 2400.00, 'Total Gas 12kg'),
+(269, 97, 2, 1, 2300.00, 'K-Gas 12kg'),
+(270, 97, 4, 1, 1200.00, 'Shell Afrigas 6kg'),
+(271, 98, 5, 1, 1100.00, 'K-Gas 6kg'),
+(272, 98, 6, 1, 1200.00, 'Total Gas 6kg'),
+(273, 98, 13, 1, 1200.00, 'Hashi Gas 6kg'),
+(274, 98, 5, 1, 1100.00, 'K-Gas 6kg'),
+(275, 98, 6, 1, 1200.00, 'Total Gas 6kg'),
+(276, 98, 13, 1, 1200.00, 'Hashi Gas 6kg'),
+(277, 99, 5, 1, 1100.00, 'K-Gas 6kg'),
+(278, 99, 2, 1, 2300.00, 'K-Gas 12kg'),
+(279, 100, 2, 1, 2300.00, 'K-Gas 12kg'),
+(280, 100, 5, 1, 1100.00, 'K-Gas 6kg'),
+(281, 100, 12, 1, 2300.00, 'ProGas 12kg'),
+(282, 101, 2, 1, 2300.00, 'K-Gas 12kg'),
+(283, 101, 2, 1, 2300.00, 'K-Gas 12kg'),
+(284, 101, 5, 1, 1100.00, 'K-Gas 6kg'),
+(285, 101, 5, 1, 1100.00, 'K-Gas 6kg'),
+(286, 102, 6, 1, 1200.00, 'Total Gas 6kg'),
+(287, 102, 5, 1, 1100.00, 'K-Gas 6kg'),
+(288, 102, 2, 1, 2300.00, 'K-Gas 12kg'),
+(289, 103, 2, 1, 2300.00, 'K-Gas 12kg'),
+(290, 103, 2, 1, 2300.00, 'K-Gas 12kg'),
+(291, 103, 2, 1, 2300.00, 'K-Gas 12kg'),
+(292, 104, 5, 1, 1100.00, 'K-Gas 6kg'),
+(293, 104, 5, 1, 1100.00, 'K-Gas 6kg'),
+(294, 104, 5, 1, 1100.00, 'K-Gas 6kg'),
+(295, 105, 4, 1, 1200.00, 'Shell Afrigas 6kg'),
+(296, 105, 4, 1, 1200.00, 'Shell Afrigas 6kg'),
+(297, 105, 4, 1, 1200.00, 'Shell Afrigas 6kg'),
+(298, 106, 2, 1, 2300.00, 'K-Gas 12kg'),
+(299, 107, 21, 1, 2300.00, 'Luqman Gas 12kg'),
+(300, 107, 21, 1, 2300.00, 'Luqman Gas 12kg'),
+(301, 107, 21, 1, 2300.00, 'Luqman Gas 12kg'),
+(302, 108, 4, 1, 1200.00, 'Shell Afrigas 6kg'),
+(303, 108, 4, 1, 1200.00, 'Shell Afrigas 6kg'),
+(304, 108, 4, 1, 1200.00, 'Shell Afrigas 6kg'),
+(305, 109, 14, 1, 2300.00, 'Hashi Gas 12kg'),
+(306, 109, 14, 1, 2300.00, 'Hashi Gas 12kg'),
+(307, 109, 14, 1, 2300.00, 'Hashi Gas 12kg'),
+(308, 110, 6, 1, 1200.00, 'Total Gas 6kg'),
+(309, 110, 6, 1, 1200.00, 'Total Gas 6kg'),
+(310, 110, 6, 1, 1200.00, 'Total Gas 6kg'),
+(311, 111, 14, 1, 2300.00, 'Hashi Gas 12kg'),
+(312, 111, 14, 1, 2300.00, 'Hashi Gas 12kg'),
+(313, 112, 14, 1, 2300.00, 'Hashi Gas 12kg'),
+(314, 112, 14, 1, 2300.00, 'Hashi Gas 12kg'),
+(315, 113, 2, 1, 2300.00, 'K-Gas 12kg'),
+(316, 114, 2, 1, 2300.00, 'K-Gas 12kg'),
+(317, 115, 2, 1, 2300.00, 'K-Gas 12kg'),
+(318, 116, 2, 1, 2300.00, 'K-Gas 12kg'),
+(319, 117, 2, 1, 2300.00, 'K-Gas 12kg'),
+(320, 117, 2, 1, 2300.00, 'K-Gas 12kg'),
+(321, 117, 4, 1, 1200.00, 'Shell Afrigas 6kg'),
+(322, 117, 4, 1, 1200.00, 'Shell Afrigas 6kg'),
+(323, 118, 2, 1, 2300.00, 'K-Gas 12kg'),
+(324, 118, 2, 1, 2300.00, 'K-Gas 12kg'),
+(325, 118, 2, 1, 2300.00, 'K-Gas 12kg'),
+(326, 118, 2, 1, 2300.00, 'K-Gas 12kg');
 
 -- --------------------------------------------------------
 
@@ -635,17 +825,17 @@ CREATE TABLE `products` (
 
 INSERT INTO `products` (`product_id`, `product_name`, `description`, `created_at`, `image_path`, `quantity`) VALUES
 (1, 'Shell Afrigas 12kg', 'High-quality 12kg gas cylinder for household use', '2025-04-02 13:52:16', 'assets/images/Shell Afrigas 12kg.jpg', 0),
-(2, 'K-Gas 12kg', 'High-quality 12kg gas cylinder for household use', '2025-04-02 13:52:16', 'assets/images/K-Gas 12kg.jpg', 97),
-(3, 'Total Gas 12kg', 'High-quality 12kg gas cylinder for household use', '2025-04-02 13:52:16', 'assets/images/Total Gas 12kg.jpg', 9),
-(4, 'Shell Afrigas 6kg', 'High-quality 6kg gas cylinder for household use', '2025-04-02 13:52:16', 'assets/images/Shell Afrigas 6kg.jpg', 85),
-(5, 'K-Gas 6kg', 'High-quality 6kg gas cylinder for household use', '2025-04-02 13:52:16', 'assets/images/K-Gas 6kg.jpg', 44),
-(6, 'Total Gas 6kg', 'High-quality 6kg gas cylinder for household use', '2025-04-02 13:52:16', 'assets/images/Total Gas 6kg.jpg', 64),
+(2, 'K-Gas 12kg', 'High-quality 12kg gas cylinder for household use', '2025-04-02 13:52:16', 'assets/images/K-Gas 12kg.jpg', 83),
+(3, 'Total Gas 12kg', 'High-quality 12kg gas cylinder for household use', '2025-04-02 13:52:16', 'assets/images/Total Gas 12kg.jpg', 0),
+(4, 'Shell Afrigas 6kg', 'High-quality 6kg gas cylinder for household use', '2025-04-02 13:52:16', 'assets/images/Shell Afrigas 6kg.jpg', 78),
+(5, 'K-Gas 6kg', 'High-quality 6kg gas cylinder for household use', '2025-04-02 13:52:16', 'assets/images/K-Gas 6kg.jpg', 39),
+(6, 'Total Gas 6kg', 'High-quality 6kg gas cylinder for household use', '2025-04-02 13:52:16', 'assets/images/Total Gas 6kg.jpg', 60),
 (11, 'ProGas 6kg', '6kg cylinder supplied by ProGas', '2025-04-23 04:49:41', 'assets/images/ProGas 6kg.jpg', 0),
-(12, 'ProGas 12kg', '12kg cylinder supplied by ProGas', '2025-04-23 04:49:41', 'assets/images/ProGas 12kg.jpg', 0),
-(13, 'Hashi Gas 6kg', '6kg cylinder supplied by Hashi Gas', '2025-05-13 16:40:51', NULL, 4),
-(14, 'Hashi Gas 12kg', '12kg cylinder supplied by Hashi Gas', '2025-05-13 16:40:51', NULL, 10),
+(12, 'ProGas 12kg', '12kg cylinder supplied by ProGas', '2025-04-23 04:49:41', 'assets/images/ProGas 12kg.jpg', 11),
+(13, 'Hashi Gas 6kg', '6kg cylinder supplied by Hashi Gas', '2025-05-13 16:40:51', NULL, 3),
+(14, 'Hashi Gas 12kg', '12kg cylinder supplied by Hashi Gas', '2025-05-13 16:40:51', NULL, 3),
 (20, 'Luqman Gas 6kg', '6kg cylinder supplied by Luqman Gas', '2025-05-13 17:04:13', NULL, 0),
-(21, 'Luqman Gas 12kg', '12kg cylinder supplied by Luqman Gas', '2025-05-13 17:04:13', NULL, 10);
+(21, 'Luqman Gas 12kg', '12kg cylinder supplied by Luqman Gas', '2025-05-13 17:04:13', NULL, 13);
 
 -- --------------------------------------------------------
 
@@ -742,7 +932,151 @@ INSERT INTO `purchase_history` (`id`, `supplier_id`, `product`, `quantity`, `pur
 (80, 11, 'Hashi Gas 6kg', 1, 24, '2025-05-20 07:10:46', 'completed', 900.00),
 (81, 11, 'Hashi Gas 6kg', 1, 24, '2025-05-20 07:12:39', 'completed', 900.00),
 (82, 1, 'K-Gas 6kg', 1, 24, '2025-05-20 07:23:46', 'completed', 750.00),
-(83, 1, 'K-Gas 12kg', 10, 24, '2025-05-23 13:33:02', 'completed', 10000.00);
+(83, 1, 'K-Gas 12kg', 10, 24, '2025-05-23 13:33:02', 'completed', 10000.00),
+(84, 1, 'K-Gas 12kg', 10, 24, '2025-06-03 07:35:46', 'completed', 10000.00),
+(85, 16, 'Luqman Gas 12kg', 6, 24, '2025-06-03 07:36:05', 'completed', 12000.00),
+(86, 10, 'ProGas 12kg', 11, 24, '2025-06-03 07:36:20', 'completed', 22000.00),
+(87, 3, 'Total Gas 12kg', 4, 29, '2025-06-10 12:07:04', 'completed', 6000.00);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `return_audit_log`
+--
+
+CREATE TABLE `return_audit_log` (
+  `log_id` int(11) NOT NULL,
+  `return_id` int(11) NOT NULL,
+  `status_from` varchar(50) DEFAULT NULL,
+  `status_to` varchar(50) NOT NULL,
+  `changed_by` int(11) NOT NULL,
+  `change_date` timestamp NOT NULL DEFAULT current_timestamp(),
+  `notes` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `return_audit_log`
+--
+
+INSERT INTO `return_audit_log` (`log_id`, `return_id`, `status_from`, `status_to`, `changed_by`, `change_date`, `notes`) VALUES
+(2, 2, NULL, 'pending', 9, '2025-06-12 07:01:51', 'Return request created by customer'),
+(3, 3, NULL, 'pending', 9, '2025-06-12 07:53:34', 'Return request created by customer'),
+(4, 4, NULL, 'pending', 9, '2025-06-12 07:55:15', 'Return request created by customer'),
+(5, 5, NULL, 'pending', 9, '2025-06-12 07:55:49', 'Return request created by customer'),
+(6, 6, NULL, 'pending', 9, '2025-06-12 08:14:53', 'Return request created by customer'),
+(7, 7, NULL, 'pending', 9, '2025-06-12 08:35:38', 'Return request created by customer'),
+(8, 8, NULL, 'pending', 9, '2025-06-12 08:49:13', 'Return request created by customer'),
+(9, 9, NULL, 'pending', 9, '2025-06-13 04:37:45', 'Return request created by customer'),
+(10, 10, NULL, 'pending', 9, '2025-06-13 04:47:22', 'Return request created by customer'),
+(16, 9, 'pending', 'declined', 17, '2025-06-13 05:26:11', 'jj'),
+(17, 7, 'pending', 'approved', 17, '2025-06-13 05:26:44', 'Inc'),
+(22, 10, 'pending', 'declined', 17, '2025-06-13 06:53:18', 'n/a'),
+(24, 11, NULL, 'pending', 9, '2025-06-13 07:18:44', 'Return request created by customer'),
+(25, 12, NULL, 'pending', 9, '2025-06-17 06:41:07', 'Return request created by customer'),
+(26, 13, NULL, 'pending', 9, '2025-06-17 06:54:26', 'Return request created by customer'),
+(27, 14, NULL, 'pending', 9, '2025-06-17 07:11:12', 'Return request created by customer'),
+(28, 15, NULL, 'pending', 9, '2025-06-17 07:12:01', 'Return request created by customer'),
+(29, 16, NULL, 'pending', 9, '2025-06-17 07:17:02', 'Return request created by customer'),
+(30, 17, NULL, 'pending', 9, '2025-06-17 07:17:13', 'Return request created by customer'),
+(31, 18, NULL, 'pending', 9, '2025-06-17 07:20:58', 'Return request created by customer'),
+(32, 19, NULL, 'pending', 9, '2025-06-17 07:30:23', 'Return request created by customer'),
+(33, 20, NULL, 'pending', 9, '2025-06-17 07:30:35', 'Return request created by customer'),
+(34, 21, NULL, 'pending', 9, '2025-06-17 07:33:07', 'Return request created by customer'),
+(35, 22, NULL, 'pending', 9, '2025-06-17 07:34:47', 'Return request created by customer'),
+(36, 23, NULL, 'pending', 9, '2025-06-17 07:35:12', 'Return request created by customer'),
+(37, 24, NULL, 'pending', 9, '2025-06-17 07:36:49', 'Return request created by customer'),
+(38, 25, NULL, 'pending', 9, '2025-06-17 07:42:45', 'Return request created by customer'),
+(39, 26, NULL, 'pending', 9, '2025-06-17 07:58:39', 'Return request created by customer'),
+(40, 27, NULL, 'pending', 9, '2025-06-17 08:13:38', 'Return request created by customer'),
+(41, 28, NULL, 'pending', 9, '2025-06-17 11:08:35', 'Return request created by customer'),
+(42, 29, NULL, 'pending', 9, '2025-06-17 11:30:57', 'Return request created by customer'),
+(43, 30, NULL, 'pending', 9, '2025-06-17 11:33:55', 'Return request created by customer'),
+(44, 31, NULL, 'pending', 9, '2025-06-18 06:45:20', 'Return request created by customer'),
+(45, 32, NULL, 'pending', 9, '2025-06-18 06:53:01', 'Return request created by customer'),
+(46, 33, NULL, 'pending', 9, '2025-06-18 06:58:05', 'Return request created by customer'),
+(47, 34, NULL, 'pending', 9, '2025-06-18 07:01:55', 'Return request created by customer'),
+(48, 35, NULL, 'pending', 9, '2025-06-18 08:07:23', 'Return request created by customer'),
+(49, 36, NULL, 'pending', 9, '2025-06-19 06:22:55', 'Return request created by customer'),
+(50, 37, NULL, 'pending', 9, '2025-06-19 07:03:37', 'Return request created by customer'),
+(51, 38, NULL, 'pending', 9, '2025-06-19 07:17:22', 'Return request created by customer'),
+(52, 39, NULL, 'pending', 9, '2025-06-19 07:25:29', 'Return request created by customer'),
+(53, 40, NULL, 'pending', 9, '2025-06-19 08:57:10', 'Return request created by customer'),
+(54, 41, NULL, 'pending', 9, '2025-06-19 09:02:08', 'Return request created by customer'),
+(55, 42, NULL, 'pending', 9, '2025-06-19 11:17:11', 'Return request created by customer');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `return_requests`
+--
+
+CREATE TABLE `return_requests` (
+  `return_id` int(11) NOT NULL,
+  `order_id` int(11) NOT NULL,
+  `cust_id` int(11) NOT NULL,
+  `return_reason` text NOT NULL,
+  `return_quantity` int(11) NOT NULL,
+  `return_status` enum('pending','approved','declined') NOT NULL DEFAULT 'pending',
+  `request_date` timestamp NOT NULL DEFAULT current_timestamp(),
+  `processed_date` timestamp NULL DEFAULT NULL,
+  `processed_by` int(11) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `order_item_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `return_requests`
+--
+
+INSERT INTO `return_requests` (`return_id`, `order_id`, `cust_id`, `return_reason`, `return_quantity`, `return_status`, `request_date`, `processed_date`, `processed_by`, `notes`, `order_item_id`) VALUES
+(2, 12, 1, 'damaged', 1, '', '2025-06-12 07:01:51', NULL, NULL, 'hh', 0),
+(3, 80, 1, 'quality', 1, '', '2025-06-12 07:53:33', NULL, NULL, 'HH', 0),
+(4, 13, 1, 'wrong_item', 2, '', '2025-06-12 07:55:15', NULL, NULL, 'appprove', 0),
+(5, 18, 1, 'damaged', 1, '', '2025-06-12 07:55:49', NULL, NULL, 'hh', 0),
+(6, 26, 1, 'Wrong Item\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 5 units\n- K-Gas 6kg: Returning 1 units, Keeping 3 units\n', 10, 'approved', '2025-06-12 08:14:53', '2025-06-17 04:32:19', 17, 'hh', 0),
+(7, 86, 1, 'Wrong Item\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 5 units\n- K-Gas 6kg: Returning 1 units, Keeping 3 units\nWrong Item\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 5 units\n- K-Gas 6kg: Returning 1 units, Keeping 3 units\n', 3, 'approved', '2025-06-12 08:35:38', '2025-06-13 05:26:44', 17, 'Inc', 0),
+(8, 87, 1, 'Wrong Item\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 5 units\n- K-Gas 6kg: Returning 1 units, Keeping 3 units\n', 2, 'approved', '2025-06-12 08:49:13', '2025-06-13 06:11:51', 17, 'hh', 0),
+(9, 81, 1, 'Wrong Item\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n', 1, 'declined', '2025-06-13 04:37:45', '2025-06-13 05:26:11', 17, 'jj', 0),
+(10, 28, 1, 'Damaged\n\nReturn Details:\n- Shell Afrigas 12kg: Returning 1 units, Keeping 0 units\n- K-Gas 6kg: Returning 1 units, Keeping 0 units\n', 2, 'declined', '2025-06-13 04:47:22', '2025-06-13 06:53:18', 17, 'n/a', 0),
+(11, 89, 1, 'Damaged\n\nReturn Details:\n- Total Gas 12kg: Returning 1 units, Keeping 0 units\n- Total Gas 6kg: Returning 1 units, Keeping 0 units\n', 2, 'approved', '2025-06-13 07:18:44', '2025-06-13 06:19:46', 17, 'hh', 0),
+(12, 90, 1, 'Damaged\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n- Total Gas 6kg: Returning 1 units, Keeping 0 units\n- K-Gas 6kg: Returning 1 units, Keeping 0 units\n', 3, '', '2025-06-17 06:41:07', NULL, NULL, 'approve', 0),
+(13, 91, 1, 'Damaged\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n- Total Gas 12kg: Returning 1 units, Keeping 0 units\n', 2, '', '2025-06-17 06:54:26', NULL, NULL, 'approve', 0),
+(14, 81, 1, 'Quality\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n', 1, '', '2025-06-17 07:11:12', NULL, NULL, 'sorry', 0),
+(15, 90, 1, 'Damaged\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n- Total Gas 6kg: Returning 1 units, Keeping 0 units\n- K-Gas 6kg: Returning 1 units, Keeping 0 units\n', 3, '', '2025-06-17 07:12:01', NULL, NULL, 'jj', 0),
+(16, 81, 1, 'Wrong Item\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n', 1, 'declined', '2025-06-17 07:17:02', NULL, NULL, 'gg', 0),
+(17, 80, 1, 'Quality\n\nReturn Details:\n- K-Gas 6kg: Returning 1 units, Keeping 0 units\n- Total Gas 6kg: Returning 1 units, Keeping 0 units\n- Shell Afrigas 6kg: Returning 1 units, Keeping 0 units\n', 3, 'declined', '2025-06-17 07:17:13', NULL, NULL, 'gg', 0),
+(18, 90, 1, 'Damaged\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n- Total Gas 6kg: Returning 1 units, Keeping 0 units\n- K-Gas 6kg: Returning 1 units, Keeping 0 units\n', 3, 'approved', '2025-06-17 07:20:57', NULL, NULL, 'gg', 0),
+(19, 81, 1, 'Damaged\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n', 1, 'approved', '2025-06-17 07:30:23', NULL, NULL, 'hh', 0),
+(20, 80, 1, 'Quality\n\nReturn Details:\n- K-Gas 6kg: Returning 1 units, Keeping 0 units\n- Total Gas 6kg: Returning 1 units, Keeping 0 units\n- Shell Afrigas 6kg: Returning 1 units, Keeping 0 units\n', 3, 'declined', '2025-06-17 07:30:35', NULL, NULL, 'hh', 0),
+(21, 86, 1, 'Damaged\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n- Total Gas 6kg: Returning 1 units, Keeping 0 units\n- Hashi Gas 12kg: Returning 1 units, Keeping 0 units\n', 3, 'approved', '2025-06-17 07:33:06', NULL, NULL, 'ggg', 0),
+(22, 91, 1, 'Damaged\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n- Total Gas 12kg: Returning 1 units, Keeping 0 units\n', 2, 'approved', '2025-06-17 07:34:47', NULL, NULL, 'dd', 0),
+(23, 49, 1, 'Damaged\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n', 1, 'approved', '2025-06-17 07:35:12', NULL, NULL, 'gg', 0),
+(24, 80, 1, 'Wrong Item\n\nReturn Details:\n- K-Gas 6kg: Returning 1 units, Keeping 0 units\n- Total Gas 6kg: Returning 1 units, Keeping 0 units\n- Shell Afrigas 6kg: Returning 1 units, Keeping 0 units\n', 3, 'approved', '2025-06-17 07:36:49', NULL, NULL, 'gg', 0),
+(25, 92, 1, 'Damaged\n\nReturn Details:\n- K-Gas 6kg: Returning 1 units, Keeping 0 units\n- Total Gas 6kg: Returning 1 units, Keeping 0 units\n- Shell Afrigas 6kg: Returning 1 units, Keeping 0 units\n', 3, 'approved', '2025-06-17 07:42:45', NULL, NULL, '1234', 0),
+(26, 93, 1, 'Damaged\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n- Total Gas 12kg: Returning 1 units, Keeping 0 units\n', 2, 'approved', '2025-06-17 07:58:39', NULL, NULL, 'hh', 0),
+(27, 94, 1, 'Damaged\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n', 1, 'approved', '2025-06-17 08:13:38', NULL, NULL, 'hh', 0),
+(28, 96, 1, 'Damaged\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n- Total Gas 12kg: Returning 1 units, Keeping 0 units\n', 2, 'approved', '2025-06-17 11:08:35', NULL, NULL, 'bb', 0),
+(29, 97, 1, 'Damaged\n\nReturn Details:\n- Total Gas 12kg: Returning 1 units, Keeping 0 units\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n- Shell Afrigas 6kg: Returning 1 units, Keeping 0 units\n', 3, 'approved', '2025-06-17 11:30:57', NULL, NULL, 'nnnn', 0),
+(30, 89, 1, 'Damaged\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n', 1, 'declined', '2025-06-17 11:33:55', NULL, NULL, 'hhi', 0),
+(31, 98, 1, 'Damaged\n\nReturn Details:\n- K-Gas 6kg: Returning 1 units, Keeping 0 units\n- Total Gas 6kg: Returning 1 units, Keeping 0 units\n- Hashi Gas 6kg: Returning 1 units, Keeping 0 units\n', 3, 'approved', '2025-06-18 06:45:20', NULL, NULL, 'ik', 0),
+(32, 99, 1, 'Damaged\n\nReturn Details:\n- K-Gas 6kg: Returning 1 units, Keeping 0 units\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n', 2, 'approved', '2025-06-18 06:53:01', NULL, NULL, 'll', 0),
+(33, 100, 1, 'Damaged\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n- K-Gas 6kg: Returning 1 units, Keeping 0 units\n- ProGas 12kg: Returning 1 units, Keeping 0 units\n', 3, 'approved', '2025-06-18 06:58:05', NULL, NULL, 'nn', 0),
+(34, 101, 1, 'Damaged\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n- K-Gas 6kg: Returning 1 units, Keeping 0 units\n', 2, 'approved', '2025-06-18 07:01:55', NULL, NULL, 'd', 0),
+(35, 102, 1, 'Damaged\n\nReturn Details:\n- Total Gas 6kg: Returning 1 units, Keeping 0 units\n- K-Gas 6kg: Returning 1 units, Keeping 0 units\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n', 3, 'approved', '2025-06-18 08:07:23', NULL, NULL, 'yes', 0),
+(36, 103, 1, 'Damaged Product\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Keeping 0 units\n', 1, 'approved', '2025-06-19 06:22:55', NULL, NULL, 'mm', 0),
+(37, 104, 1, 'Damaged Product\n\nReturn Details:\n- K-Gas 6kg: Returning 1 units, Keeping 0 units\n', 1, 'approved', '2025-06-19 07:03:37', NULL, NULL, 'mml', 0),
+(38, 105, 1, 'Damaged Product\n\nReturn Details:\n- Shell Afrigas 6kg: Returning 1 units, Keeping 0 units\n', 1, 'approved', '2025-06-19 07:17:22', NULL, NULL, 'kk', 0),
+(39, 28, 1, 'Damaged Product\n\nReturn Details:\n- 12kg Gas Cylinder: Returning 1 units, Keeping 0 units\n', 1, 'approved', '2025-06-19 07:25:29', NULL, NULL, 'mm', 0),
+(40, 106, 1, 'Damaged Product\n\nReturn Details:\n- K-Gas 12kg: Returning 1 units, Remaining 0 units from original order\n', 1, 'approved', '2025-06-19 08:57:10', NULL, NULL, 'j', 0),
+(41, 107, 1, 'Damaged Product\n\nReturn Details:\n- Luqman Gas 12kg: Returning 1 units, Remaining 0 units from original order\n', 1, 'approved', '2025-06-19 09:02:08', NULL, NULL, 'm', 0),
+(42, 108, 1, 'Damaged Product\n\nReturn Details:\n- Shell Afrigas 6kg: Returning 1 units, Remaining 0 units from original order\n', 1, 'approved', '2025-06-19 11:17:11', NULL, NULL, 'yes', 0),
+(43, 109, 1, 'Wrong Item', 1, 'pending', '2025-06-19 12:52:25', NULL, NULL, NULL, 306),
+(44, 110, 1, 'Damaged Product', 1, 'approved', '2025-06-19 12:56:14', NULL, NULL, 'nnn', 310),
+(45, 109, 1, 'Damaged Product', 1, 'pending', '2025-06-20 12:13:41', NULL, NULL, NULL, 305),
+(46, 117, 1, 'Quality Issues', 1, 'declined', '2025-06-20 12:20:48', NULL, NULL, 'NO', 320),
+(47, 117, 1, 'Wrong Item', 1, 'approved', '2025-06-20 12:22:23', NULL, NULL, 'saeed', 319),
+(48, 118, 1, 'Damaged Product', 1, 'approved', '2025-06-20 13:09:40', NULL, NULL, 'app', 325),
+(49, 118, 1, 'Damaged Product', 1, 'pending', '2025-06-20 13:09:40', NULL, NULL, NULL, 324);
 
 -- --------------------------------------------------------
 
@@ -895,7 +1229,88 @@ INSERT INTO `sales_record` (`sale_id`, `order_number`, `customer_name`, `quantit
 (146, 'ORD1747903864', 'Tanjiro Kamado', 1, '2025-05-22 08:51:04', 'M-PESA', 'K-Gas 6kg', NULL, 1100.00, 5, 1100.00, NULL),
 (147, 'ORD1747903864', 'Tanjiro Kamado', 1, '2025-05-22 08:51:04', 'M-PESA', 'Hashi Gas 6kg', NULL, 1200.00, 13, 1200.00, NULL),
 (148, '49300023', 'bla bla', 1, '2025-05-23 12:27:12', 'MPESA', 'ProGas 12kg', '82', 2300.00, 12, NULL, 1),
-(149, '52142541', 'bla bla', 1, '2025-05-23 12:27:46', 'MPESA', 'Total Gas 12kg', '85', 2400.00, 3, NULL, 1);
+(149, '52142541', 'bla bla', 1, '2025-05-23 12:27:46', 'MPESA', 'Total Gas 12kg', '85', 2400.00, 3, NULL, 1),
+(150, '18628604', 'bla bla', 1, '2025-05-26 06:46:37', 'MPESA', 'Total Gas 6kg', '70', 1200.00, 6, NULL, 1),
+(151, '14112247', 'bla bla', 1, '2025-05-26 07:05:49', 'MPESA', 'K-Gas 6kg', '86', 1100.00, 5, NULL, 1),
+(152, '35289644', 'james jones', 1, '2025-05-27 06:36:43', 'MPESA', 'Total Gas 12kg', '87', 2400.00, 3, NULL, 2),
+(153, '97427209', 'james jones', 1, '2025-05-29 06:38:39', 'MPESA', 'K-Gas 12kg', '88', 2300.00, 2, NULL, 2),
+(154, '14421486', 'bla bla', 1, '2025-06-04 08:24:37', 'MPESA', 'K-Gas 12kg', '89', 2300.00, 2, NULL, 1),
+(155, '14421486', 'bla bla', 1, '2025-06-04 08:24:37', 'MPESA', 'K-Gas 12kg', '89', 2300.00, 2, NULL, 1),
+(156, '14421486', 'bla bla', 1, '2025-06-04 08:24:37', 'MPESA', 'K-Gas 12kg', '89', 2300.00, 2, NULL, 1),
+(157, 'ORD1749546419', 'Clark Kent', 7, '2025-06-10 09:06:59', 'M-PESA', 'Total Gas 12kg', NULL, 16800.00, 3, 16800.00, NULL),
+(158, '55362271', 'bla bla', 1, '2025-06-10 11:39:13', 'MPESA', 'K-Gas 12kg', '91', 2300.00, 2, NULL, 1),
+(159, '87964617', 'bla bla', 1, '2025-06-10 11:39:19', 'MPESA', 'Luqman Gas 12kg', '92', 2300.00, 21, NULL, 1),
+(160, '42882645', 'bla bla', 1, '2025-06-10 12:06:04', 'MPESA', 'K-Gas 12kg', '93', 2300.00, 2, NULL, 1),
+(161, '25692107', 'bla bla', 1, '2025-06-17 08:36:36', 'MPESA', 'K-Gas 12kg', '94', 2300.00, 2, NULL, 1),
+(162, '25692107', 'bla bla', 1, '2025-06-17 08:36:36', 'MPESA', 'K-Gas 12kg', '94', 2300.00, 2, NULL, 1),
+(163, '25692107', 'bla bla', 1, '2025-06-17 08:36:36', 'MPESA', 'K-Gas 12kg', '94', 2300.00, 2, NULL, 1),
+(164, '77468970', 'bla bla', 1, '2025-06-17 11:01:14', 'MPESA', 'K-Gas 12kg', '95', 2300.00, 2, NULL, 1),
+(165, '77468970', 'bla bla', 1, '2025-06-17 11:01:14', 'MPESA', 'K-Gas 12kg', '95', 2300.00, 2, NULL, 1),
+(166, '77468970', 'bla bla', 1, '2025-06-17 11:01:14', 'MPESA', 'Total Gas 12kg', '95', 2400.00, 3, NULL, 1),
+(167, '77468970', 'bla bla', 1, '2025-06-17 11:01:14', 'MPESA', 'Total Gas 12kg', '95', 2400.00, 3, NULL, 1),
+(168, '60145250', 'bla bla', 1, '2025-06-17 11:07:24', 'MPESA', 'K-Gas 12kg', '96', 2300.00, 2, NULL, 1),
+(169, '60145250', 'bla bla', 1, '2025-06-17 11:07:24', 'MPESA', 'K-Gas 12kg', '96', 2300.00, 2, NULL, 1),
+(170, '60145250', 'bla bla', 1, '2025-06-17 11:07:24', 'MPESA', 'Total Gas 12kg', '96', 2400.00, 3, NULL, 1),
+(171, '60145250', 'bla bla', 1, '2025-06-17 11:07:24', 'MPESA', 'Total Gas 12kg', '96', 2400.00, 3, NULL, 1),
+(172, '79117124', 'bla bla', 1, '2025-06-17 11:28:14', 'MPESA', 'Total Gas 12kg', '97', 2400.00, 3, NULL, 1),
+(173, '79117124', 'bla bla', 1, '2025-06-17 11:28:14', 'MPESA', 'K-Gas 12kg', '97', 2300.00, 2, NULL, 1),
+(174, '79117124', 'bla bla', 1, '2025-06-17 11:28:14', 'MPESA', 'Shell Afrigas 6kg', '97', 1200.00, 4, NULL, 1),
+(175, '18502263', 'bla bla', 1, '2025-06-18 06:41:23', 'MPESA', 'K-Gas 6kg', '98', 1100.00, 5, NULL, 1),
+(176, '18502263', 'bla bla', 1, '2025-06-18 06:41:23', 'MPESA', 'Total Gas 6kg', '98', 1200.00, 6, NULL, 1),
+(177, '18502263', 'bla bla', 1, '2025-06-18 06:41:23', 'MPESA', 'Hashi Gas 6kg', '98', 1200.00, 13, NULL, 1),
+(178, '18502263', 'bla bla', 1, '2025-06-18 06:41:23', 'MPESA', 'K-Gas 6kg', '98', 1100.00, 5, NULL, 1),
+(179, '18502263', 'bla bla', 1, '2025-06-18 06:41:23', 'MPESA', 'Total Gas 6kg', '98', 1200.00, 6, NULL, 1),
+(180, '18502263', 'bla bla', 1, '2025-06-18 06:41:23', 'MPESA', 'Hashi Gas 6kg', '98', 1200.00, 13, NULL, 1),
+(181, '74189781', 'bla bla', 1, '2025-06-18 06:49:27', 'MPESA', 'K-Gas 6kg', '99', 1100.00, 5, NULL, 1),
+(182, '74189781', 'bla bla', 1, '2025-06-18 06:49:27', 'MPESA', 'K-Gas 12kg', '99', 2300.00, 2, NULL, 1),
+(183, '38933420', 'bla bla', 1, '2025-06-18 06:56:01', 'MPESA', 'K-Gas 12kg', '100', 2300.00, 2, NULL, 1),
+(184, '38933420', 'bla bla', 1, '2025-06-18 06:56:01', 'MPESA', 'K-Gas 6kg', '100', 1100.00, 5, NULL, 1),
+(185, '38933420', 'bla bla', 1, '2025-06-18 06:56:01', 'MPESA', 'ProGas 12kg', '100', 2300.00, 12, NULL, 1),
+(186, '94943779', 'bla bla', 1, '2025-06-18 06:59:47', 'MPESA', 'K-Gas 12kg', '101', 2300.00, 2, NULL, 1),
+(187, '94943779', 'bla bla', 1, '2025-06-18 06:59:47', 'MPESA', 'K-Gas 12kg', '101', 2300.00, 2, NULL, 1),
+(188, '94943779', 'bla bla', 1, '2025-06-18 06:59:47', 'MPESA', 'K-Gas 6kg', '101', 1100.00, 5, NULL, 1),
+(189, '94943779', 'bla bla', 1, '2025-06-18 06:59:47', 'MPESA', 'K-Gas 6kg', '101', 1100.00, 5, NULL, 1),
+(190, '98090757', 'bla bla', 1, '2025-06-18 08:05:07', 'MPESA', 'Total Gas 6kg', '102', 1200.00, 6, NULL, 1),
+(191, '98090757', 'bla bla', 1, '2025-06-18 08:05:07', 'MPESA', 'K-Gas 6kg', '102', 1100.00, 5, NULL, 1),
+(192, '98090757', 'bla bla', 1, '2025-06-18 08:05:07', 'MPESA', 'K-Gas 12kg', '102', 2300.00, 2, NULL, 1),
+(193, '40285934', 'bla bla', 1, '2025-06-19 06:16:28', 'MPESA', 'K-Gas 12kg', '103', 2300.00, 2, NULL, 1),
+(194, '40285934', 'bla bla', 1, '2025-06-19 06:16:28', 'MPESA', 'K-Gas 12kg', '103', 2300.00, 2, NULL, 1),
+(195, '40285934', 'bla bla', 1, '2025-06-19 06:16:28', 'MPESA', 'K-Gas 12kg', '103', 2300.00, 2, NULL, 1),
+(196, '62328139', 'bla bla', 1, '2025-06-19 07:00:06', 'MPESA', 'K-Gas 6kg', '104', 1100.00, 5, NULL, 1),
+(197, '62328139', 'bla bla', 1, '2025-06-19 07:00:06', 'MPESA', 'K-Gas 6kg', '104', 1100.00, 5, NULL, 1),
+(198, '62328139', 'bla bla', 1, '2025-06-19 07:00:06', 'MPESA', 'K-Gas 6kg', '104', 1100.00, 5, NULL, 1),
+(199, '84432582', 'bla bla', 1, '2025-06-19 07:15:23', 'MPESA', 'Shell Afrigas 6kg', '105', 1200.00, 4, NULL, 1),
+(200, '84432582', 'bla bla', 1, '2025-06-19 07:15:23', 'MPESA', 'Shell Afrigas 6kg', '105', 1200.00, 4, NULL, 1),
+(201, '84432582', 'bla bla', 1, '2025-06-19 07:15:23', 'MPESA', 'Shell Afrigas 6kg', '105', 1200.00, 4, NULL, 1),
+(202, '89845941', 'bla bla', 1, '2025-06-19 08:11:15', 'MPESA', 'K-Gas 12kg', '106', 2300.00, 2, NULL, 1),
+(203, '58174424', 'bla bla', 1, '2025-06-19 09:00:30', 'MPESA', 'Luqman Gas 12kg', '107', 2300.00, 21, NULL, 1),
+(204, '58174424', 'bla bla', 1, '2025-06-19 09:00:30', 'MPESA', 'Luqman Gas 12kg', '107', 2300.00, 21, NULL, 1),
+(205, '58174424', 'bla bla', 1, '2025-06-19 09:00:30', 'MPESA', 'Luqman Gas 12kg', '107', 2300.00, 21, NULL, 1),
+(206, '42280934', 'bla bla', 1, '2025-06-19 11:15:52', 'MPESA', 'Shell Afrigas 6kg', '108', 1200.00, 4, NULL, 1),
+(207, '42280934', 'bla bla', 1, '2025-06-19 11:15:52', 'MPESA', 'Shell Afrigas 6kg', '108', 1200.00, 4, NULL, 1),
+(208, '42280934', 'bla bla', 1, '2025-06-19 11:15:52', 'MPESA', 'Shell Afrigas 6kg', '108', 1200.00, 4, NULL, 1),
+(209, '15895888', 'bla bla', 1, '2025-06-19 11:42:17', 'MPESA', 'Hashi Gas 12kg', '109', 2300.00, 14, NULL, 1),
+(210, '15895888', 'bla bla', 1, '2025-06-19 11:42:17', 'MPESA', 'Hashi Gas 12kg', '109', 2300.00, 14, NULL, 1),
+(211, '15895888', 'bla bla', 1, '2025-06-19 11:42:17', 'MPESA', 'Hashi Gas 12kg', '109', 2300.00, 14, NULL, 1),
+(212, '74607564', 'bla bla', 1, '2025-06-19 12:54:44', 'MPESA', 'Total Gas 6kg', '110', 1200.00, 6, NULL, 1),
+(213, '74607564', 'bla bla', 1, '2025-06-19 12:54:44', 'MPESA', 'Total Gas 6kg', '110', 1200.00, 6, NULL, 1),
+(214, '74607564', 'bla bla', 1, '2025-06-19 12:54:44', 'MPESA', 'Total Gas 6kg', '110', 1200.00, 6, NULL, 1),
+(215, '66768490', 'bla bla', 1, '2025-06-20 06:44:40', 'MPESA', 'Hashi Gas 12kg', '111', 2300.00, 14, NULL, 1),
+(216, '66768490', 'bla bla', 1, '2025-06-20 06:44:40', 'MPESA', 'Hashi Gas 12kg', '111', 2300.00, 14, NULL, 1),
+(217, '81787422', 'bla bla', 1, '2025-06-20 06:44:46', 'MPESA', 'Hashi Gas 12kg', '112', 2300.00, 14, NULL, 1),
+(218, '81787422', 'bla bla', 1, '2025-06-20 06:44:46', 'MPESA', 'Hashi Gas 12kg', '112', 2300.00, 14, NULL, 1),
+(219, '12454339', 'bla bla', 1, '2025-06-20 07:31:36', 'MPESA', 'K-Gas 12kg', '113', 2300.00, 2, NULL, 1),
+(220, '82722981', 'bla bla', 1, '2025-06-20 07:36:23', 'MPESA', 'K-Gas 12kg', '114', 2300.00, 2, NULL, 1),
+(221, '82722981', 'bla bla', 1, '2025-06-20 07:36:26', 'MPESA', 'K-Gas 12kg', '114', 2300.00, 2, NULL, 1),
+(222, '99953543', 'bla bla', 1, '2025-06-20 07:42:17', 'MPESA', 'K-Gas 12kg', '115', 2300.00, 2, NULL, 1),
+(223, '78051130', 'bla bla', 1, '2025-06-20 12:17:46', 'MPESA', 'K-Gas 12kg', '117', 2300.00, 2, NULL, 1),
+(224, '78051130', 'bla bla', 1, '2025-06-20 12:17:46', 'MPESA', 'K-Gas 12kg', '117', 2300.00, 2, NULL, 1),
+(225, '78051130', 'bla bla', 1, '2025-06-20 12:17:46', 'MPESA', 'Shell Afrigas 6kg', '117', 1200.00, 4, NULL, 1),
+(226, '78051130', 'bla bla', 1, '2025-06-20 12:17:46', 'MPESA', 'Shell Afrigas 6kg', '117', 1200.00, 4, NULL, 1),
+(227, '82109616', 'bla bla', 1, '2025-06-20 12:42:05', 'MPESA', 'K-Gas 12kg', '118', 2300.00, 2, NULL, 1),
+(228, '82109616', 'bla bla', 1, '2025-06-20 12:42:05', 'MPESA', 'K-Gas 12kg', '118', 2300.00, 2, NULL, 1),
+(229, '82109616', 'bla bla', 1, '2025-06-20 12:42:05', 'MPESA', 'K-Gas 12kg', '118', 2300.00, 2, NULL, 1),
+(230, '82109616', 'bla bla', 1, '2025-06-20 12:42:05', 'MPESA', 'K-Gas 12kg', '118', 2300.00, 2, NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -992,6 +1407,13 @@ ALTER TABLE `deliveries`
   ADD KEY `order_id` (`order_id`);
 
 --
+-- Indexes for table `financial_transactions`
+--
+ALTER TABLE `financial_transactions`
+  ADD PRIMARY KEY (`transaction_id`),
+  ADD KEY `order_id` (`order_id`);
+
+--
 -- Indexes for table `funds`
 --
 ALTER TABLE `funds`
@@ -1041,6 +1463,23 @@ ALTER TABLE `purchase_history`
   ADD KEY `purchased_by` (`purchased_by`);
 
 --
+-- Indexes for table `return_audit_log`
+--
+ALTER TABLE `return_audit_log`
+  ADD PRIMARY KEY (`log_id`),
+  ADD KEY `return_id` (`return_id`),
+  ADD KEY `changed_by` (`changed_by`);
+
+--
+-- Indexes for table `return_requests`
+--
+ALTER TABLE `return_requests`
+  ADD PRIMARY KEY (`return_id`),
+  ADD KEY `order_id` (`order_id`),
+  ADD KEY `cust_id` (`cust_id`),
+  ADD KEY `processed_by` (`processed_by`);
+
+--
 -- Indexes for table `sales_record`
 --
 ALTER TABLE `sales_record`
@@ -1074,31 +1513,37 @@ ALTER TABLE `customers`
 -- AUTO_INCREMENT for table `deliveries`
 --
 ALTER TABLE `deliveries`
-  MODIFY `delivery_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `delivery_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
+
+--
+-- AUTO_INCREMENT for table `financial_transactions`
+--
+ALTER TABLE `financial_transactions`
+  MODIFY `transaction_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `funds`
 --
 ALTER TABLE `funds`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=87;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=91;
 
 --
 -- AUTO_INCREMENT for table `inquiries_and_reviews`
 --
 ALTER TABLE `inquiries_and_reviews`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=86;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=119;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `order_item_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=247;
+  MODIFY `order_item_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=327;
 
 --
 -- AUTO_INCREMENT for table `price`
@@ -1116,13 +1561,25 @@ ALTER TABLE `products`
 -- AUTO_INCREMENT for table `purchase_history`
 --
 ALTER TABLE `purchase_history`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=84;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=88;
+
+--
+-- AUTO_INCREMENT for table `return_audit_log`
+--
+ALTER TABLE `return_audit_log`
+  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56;
+
+--
+-- AUTO_INCREMENT for table `return_requests`
+--
+ALTER TABLE `return_requests`
+  MODIFY `return_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
 
 --
 -- AUTO_INCREMENT for table `sales_record`
 --
 ALTER TABLE `sales_record`
-  MODIFY `sale_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=150;
+  MODIFY `sale_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=231;
 
 --
 -- AUTO_INCREMENT for table `suppliers`
@@ -1139,6 +1596,12 @@ ALTER TABLE `users`
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `financial_transactions`
+--
+ALTER TABLE `financial_transactions`
+  ADD CONSTRAINT `financial_transactions_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `inquiries_and_reviews`
@@ -1159,6 +1622,13 @@ ALTER TABLE `price`
 ALTER TABLE `purchase_history`
   ADD CONSTRAINT `purchase_history_ibfk_1` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`),
   ADD CONSTRAINT `purchase_history_ibfk_2` FOREIGN KEY (`purchased_by`) REFERENCES `users` (`id`);
+
+--
+-- Constraints for table `return_audit_log`
+--
+ALTER TABLE `return_audit_log`
+  ADD CONSTRAINT `return_audit_log_ibfk_1` FOREIGN KEY (`return_id`) REFERENCES `return_requests` (`return_id`),
+  ADD CONSTRAINT `return_audit_log_ibfk_2` FOREIGN KEY (`changed_by`) REFERENCES `users` (`id`);
 
 --
 -- Constraints for table `sales_record`

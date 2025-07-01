@@ -18,13 +18,26 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Fetch account details
-$acctSql = "SELECT F_name, L_name FROM customers WHERE cust_id = ?";
+// Fetch account details including profile image
+$acctSql = "SELECT F_name, L_name, Email, Phone_number, profile_image FROM customers WHERE cust_id = ?";
 $acctStmt = $conn->prepare($acctSql);
 if (!$acctStmt) die("Account query failed: " . $conn->error);
 $acctStmt->bind_param('i', $custId);
 if (!$acctStmt->execute()) die("Account execution failed: " . $acctStmt->error);
 $acct = $acctStmt->get_result()->fetch_assoc();
+$acctStmt->close();
+
+// Function to generate profile image (blob or default icon)
+function getProfileImageSrc($imageBlob) {
+    if ($imageBlob) {
+        return 'data:image/jpeg;base64,' . base64_encode($imageBlob);
+    }
+    return null;
+}
+
+function hasProfileImage($imageBlob) {
+    return !empty($imageBlob);
+}
 
 $sql = "
   SELECT
@@ -43,8 +56,6 @@ if (!$result) {
     die("Query error: " . $conn->error);
 }
 
-
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -59,7 +70,6 @@ if (!$result) {
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 
   <style>
     /* Navbar Styles */
@@ -94,7 +104,6 @@ if (!$result) {
       color: black;
       font-size: 18px;
       padding: 8px 16px;
-    
       transition: 0.3s;
       cursor: pointer;
     }
@@ -120,6 +129,36 @@ if (!$result) {
       align-items: center;
       justify-content: center;
     }
+    
+    /* Profile Image Styling */
+    .profile-image {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid white;
+      margin-left: 10px;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .dropdown-toggle {
+      align-items: center !important;
+      display: flex !important;
+    }
+
+    .nav-links .dropdown {
+      display: flex;
+      align-items: center;
+    }
+
+    .nav-links img.profile-image {
+      border-radius: 50% !important;
+      width: 40px !important;
+      height: 40px !important;
+      object-fit: cover !important;
+    }
+    
     /* Product Card Styles */
     .product-card {
       background-color: #e0f0ff;
@@ -239,26 +278,43 @@ if (!$result) {
       <span class="logo-text">Shop - OceanGas Enterprise</span>
       <ul class="nav-links">
       <div class="dropdown"> 
-
-  <a href="#" class="dropdown-toggle d-flex align-items-center" 
-     id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false" 
-     style="text-decoration: none; color: white;">
-     <p class="profile-text">Hi, <?php echo htmlspecialchars($acct['F_name'] . ' ' . $acct['L_name']); ?></p>
-     <i class="fas fa-user fa-lg"></i> <!-- Add an icon or text here -->
-  </a>
-  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown" style=" color:black;">
-    <li><a class="dropdown-item" href="customer_acc.php"> My Account</a></li>
-    <li><a class="dropdown-item" href="customer_orders.php"> Orders</a></li>
-    <li><a class="dropdown-item" href='customer_inquiries.php'> Help</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li>
-      
-      <a class="dropdown-item text-danger" href="/OceanGas/customer/logout.php">
-        <i class="fas fa-sign-out-alt"></i> Sign Out
-      </a>
-    </li>
-  </ul>
-</div>
+        <a href="#" class="dropdown-toggle d-flex align-items-center" 
+           id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false" 
+           style="text-decoration: none; color: white; align-items: center;">
+           <p class="profile-text">Hi, <?php echo htmlspecialchars($acct['F_name'] . ' ' . $acct['L_name']); ?></p>
+           <?php if (hasProfileImage($acct['profile_image'])): ?>
+             <img src="<?php echo getProfileImageSrc($acct['profile_image']); ?>" 
+                  alt="Profile" class="profile-image">
+           <?php else: ?>
+             <i class="fas fa-user-circle fa-lg" style="margin-left: 10px; color: white;"></i>
+           <?php endif; ?>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown" style=" color:black;">
+          <li><a class="dropdown-item" href="customer_acc.php"><i class="fas fa-user mr-2"></i> My Account</a></li>
+          <li><a class="dropdown-item" href="customer_orders.php"><i class="fas fa-shopping-cart mr-2"></i> Orders</a></li>
+          <li><a class="dropdown-item" href='customer_inquiries.php'><i class="fas fa-question-circle mr-2"></i> Help</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <label class="dropdown-item" style="cursor: pointer;">
+              <i class="fas fa-camera mr-2"></i> Change Profile Picture
+              <input type="file" id="profileImageInput" accept="image/*" style="display: none;">
+            </label>
+          </li>
+          <?php if (hasProfileImage($acct['profile_image'])): ?>
+          <li>
+            <a class="dropdown-item text-danger" href="#" id="deleteProfileImage" style="cursor: pointer;">
+              <i class="fas fa-trash mr-2"></i> Delete Profile Picture
+            </a>
+          </li>
+          <?php endif; ?>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <a class="dropdown-item text-danger" href="/OceanGas/customer/logout.php">
+              <i class="fas fa-sign-out-alt"></i> Sign Out
+            </a>
+          </li>
+        </ul>
+      </div>
 
         <li class="cart-icon">
           <a href="#" id="cartIcon"> 
@@ -381,7 +437,7 @@ if (!$result) {
     <h2>What to Do in Case of a Gas Leak</h2>
     <div class="highlight">
       <ol>
-        <li>Smell gas? It’s likely a leak.</li>
+        <li>Smell gas? It's likely a leak.</li>
         <li>Extinguish flames and do not ignite anything.</li>
         <li>Turn off and remove the regulator.</li>
         <li>Do not use electronics — they may spark.</li>
@@ -466,7 +522,7 @@ if (!$result) {
     document.getElementById('cartModalTotal').textContent = cart.total;
   }
 
-  // Show “empty cart” warning
+  // Show "empty cart" warning
   function showEmptyCartModal() {
     document.getElementById('emptyCartModal').style.display = 'block';
   }
@@ -530,7 +586,7 @@ if (!$result) {
     return container;
   }
 
-  // Handler for new “Add to Cart”
+  // Handler for new "Add to Cart"
   function addToCartHandler() {
     const productId = this.dataset.productId;
     const product_name = this.dataset.product_name;
@@ -593,12 +649,83 @@ if (!$result) {
     window.location.href = 'checkout.php';
   });
 
+  // Profile image upload
+  document.getElementById('profileImageInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size should be less than 5MB');
+        return;
+      }
+      
+      if (!file.type.match('image.*')) {
+        alert('Please select a valid image file');
+        return;
+      }
+      
+      const formData = new FormData();
+      formData.append('profile_image', file);
+      
+      const loadingDiv = document.createElement('div');
+      loadingDiv.innerHTML = '<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:white;padding:20px;border-radius:10px;z-index:9999;"><i class="fas fa-spinner fa-spin"></i> Uploading...</div>';
+      document.body.appendChild(loadingDiv);
+      
+      fetch('upload_profile_image.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.body.removeChild(loadingDiv);
+        if (data.success) {
+          window.location.reload();
+        } else {
+          alert('Error uploading image: ' + (data.message || 'Unknown error'));
+        }
+      })
+      .catch(error => {
+        document.body.removeChild(loadingDiv);
+        alert('Error uploading image: ' + error.message);
+      });
+    }
+  });
+
+  // Delete profile image
+  const deleteBtn = document.getElementById('deleteProfileImage');
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      if (confirm('Are you sure you want to delete your profile picture?')) {
+        const loadingDiv = document.createElement('div');
+        loadingDiv.innerHTML = '<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:white;padding:20px;border-radius:10px;z-index:9999;"><i class="fas fa-spinner fa-spin"></i> Deleting...</div>';
+        document.body.appendChild(loadingDiv);
+        
+        fetch('delete_profile_image.php', {
+          method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+          document.body.removeChild(loadingDiv);
+          if (data.success) {
+            window.location.reload();
+          } else {
+            alert('Error deleting image: ' + (data.message || 'Unknown error'));
+          }
+        })
+        .catch(error => {
+          document.body.removeChild(loadingDiv);
+          alert('Error deleting image: ' + error.message);
+        });
+      }
+    });
+  }
+
   // kick things off
   attachAddHandler();
   updateCartDisplay();
   restoreCartUI();
 </script>
-
 
 </body>
 </html>

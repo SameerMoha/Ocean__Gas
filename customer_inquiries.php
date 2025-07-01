@@ -25,8 +25,8 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Fetch account details
-$acctSql = "SELECT F_name, L_name, Email, Phone_number FROM customers WHERE cust_id = ?";
+// Fetch account details including profile image
+$acctSql = "SELECT F_name, L_name, Email, Phone_number, profile_image FROM customers WHERE cust_id = ?";
 $acctStmt = $conn->prepare($acctSql);
 if (!$acctStmt) die("Account query failed: " . $conn->error);
 $acctStmt->bind_param('i', $custId);
@@ -34,7 +34,17 @@ if (!$acctStmt->execute()) die("Account execution failed: " . $acctStmt->error);
 $acct = $acctStmt->get_result()->fetch_assoc();
 $acctStmt->close();
 
+// Function to generate profile image (blob or default icon)
+function getProfileImageSrc($imageBlob) {
+    if ($imageBlob) {
+        return 'data:image/jpeg;base64,' . base64_encode($imageBlob);
+    }
+    return null;
+}
 
+function hasProfileImage($imageBlob) {
+    return !empty($imageBlob);
+}
 
 // Handle inquiry submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -99,7 +109,7 @@ $countStmt->close();
 
 $totalPages = (int) ceil($total / $limit);
 
-// 3) Fetch only current page’s inquiries
+// 3) Fetch only current page's inquiries
 $inqSql = "
   SELECT message, submitted_at, status
   FROM inquiries_and_reviews
@@ -211,6 +221,34 @@ $conn->close();
       font-weight: bold;
     }
 
+    /* Profile Image Styling */
+    .profile-image {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid white;
+      margin-left: 10px;
+      display: block;
+      flex-shrink: 0;
+    }
+    
+    .dropdown-toggle {
+      align-items: center !important;
+      display: flex !important;
+    }
+    
+    .nav-links .dropdown {
+      display: flex;
+      align-items: center;
+    }
+    
+    .nav-links img.profile-image {
+      border-radius: 50% !important;
+      width: 40px !important;
+      height: 40px !important;
+      object-fit: cover !important;
+    }
   </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-800">
@@ -223,14 +261,33 @@ $conn->close();
       <div class="dropdown"> 
   <a href="#" class="dropdown-toggle d-flex align-items-center" 
      id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false" 
-     style="text-decoration: none; color: white;">
+     style="text-decoration: none; color: white; align-items: center;">
      <p class="profile-text">Hi, <?php echo htmlspecialchars($acct['F_name'] . ' ' . $acct['L_name']); ?></p>
-    <i class="fas fa-user fa-lg"></i> <!-- Add an icon or text here -->
+     <?php if (hasProfileImage($acct['profile_image'])): ?>
+       <img src="<?php echo getProfileImageSrc($acct['profile_image']); ?>" 
+            alt="Profile" class="profile-image">
+     <?php else: ?>
+       <i class="fas fa-user-circle fa-lg" style="margin-left: 10px; color: white;"></i>
+     <?php endif; ?>
   </a>
   <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown" style=" color:black;">
-    <li><a class="dropdown-item" href="customer_acc.php"> My Account</a></li>
-    <li><a class="dropdown-item" href="customer_orders.php"> Orders</a></li>
-    <li><a class="dropdown-item" href='customer_inquiries.php'> Help</a></li>
+    <li><a class="dropdown-item" href="customer_acc.php"><i class="fas fa-user mr-2"></i> My Account</a></li>
+    <li><a class="dropdown-item" href="customer_orders.php"><i class="fas fa-shopping-cart mr-2"></i> Orders</a></li>
+    <li><a class="dropdown-item" href='customer_inquiries.php'><i class="fas fa-question-circle mr-2"></i> Help</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li>
+      <label class="dropdown-item" style="cursor: pointer;">
+        <i class="fas fa-camera mr-2"></i> Change Profile Picture
+        <input type="file" id="profileImageInput" accept="image/*" style="display: none;">
+      </label>
+    </li>
+    <?php if (hasProfileImage($acct['profile_image'])): ?>
+    <li>
+      <a class="dropdown-item text-danger" href="#" id="deleteProfileImage" style="cursor: pointer;">
+        <i class="fas fa-trash mr-2"></i> Delete Profile Picture
+      </a>
+    </li>
+    <?php endif; ?>
     <li><hr class="dropdown-divider"></li>
     <li>
       <a class="dropdown-item text-danger" href="/OceanGas/customer/logout.php">
@@ -259,7 +316,6 @@ $conn->close();
           <a href="customer_acc.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_acc.php') ?> transition-all duration-150"><i class="fas fa-user-circle mr-2"></i>Account Overview</a>
           <a href="customer_orders.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_orders.php') ?> transition-all duration-150"><i class="fas fa-shopping-cart mr-2"></i>Orders</a>
           <hr class="my-2 border-black-200">
-          <a href="customer_address.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_address.php') ?> transition-all duration-150"><i class="fas fa-address-book mr-2"></i>Address Book</a>
           <a href="customer_inquiries.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_inquiries.php') ?> transition-all duration-150"><i class="fas fa-question-circle mr-2"></i>Inquiries</a>
           <a href="customer_reviews.php" class="block px-4 py-2 rounded-md font-medium <?= isActive('customer_reviews.php') ?> transition-all duration-150"><i class="fas fa-star mr-2"></i>Reviews</a>
           <a href="customer/logout.php" class="block px-4 py-2 mt-4 text-red-600 hover:bg-red-50 rounded-md transition-colors duration-150">Sign Out</a>
@@ -393,12 +449,22 @@ $conn->close();
     function updateCartDisplay() {
       document.getElementById('cart-count').textContent = cart.items.length;
     }
+    
     function showNotification(msg) {
-      const n = document.getElementById('notification') || document.body.insertAdjacentHTML('afterbegin',
-        '<div id="notification" style="position:fixed;top:5%;left:50%;transform:translateX(-50%);background:#48bb78;color:#fff;padding:.75rem 1rem;border-radius:.5rem;opacity:0;transition:.3s;z-index:300;"></div>'
-      ) && document.getElementById('notification');
-      n.textContent = msg; n.style.opacity = 1;
-      setTimeout(()=>n.style.opacity=0,2000);
+      let n = document.getElementById('notification');
+      
+      // If notification element doesn't exist, create it
+      if (!n) {
+        document.body.insertAdjacentHTML('afterbegin',
+          '<div id="notification" style="position:fixed;top:5%;left:50%;transform:translateX(-50%);background:#48bb78;color:#fff;padding:.75rem 1rem;border-radius:.5rem;opacity:0;transition:.3s;z-index:300;"></div>'
+        );
+        n = document.getElementById('notification');
+      }
+      
+      // Now safely set the content and show the notification
+      n.textContent = msg;
+      n.style.opacity = 1;
+      setTimeout(() => n.style.opacity = 0, 2000);
     }
 
     function renderCartModal() {
@@ -445,9 +511,80 @@ $conn->close();
 
     // initialize badge
     updateCartDisplay();
+
+    // Profile image upload
+    document.getElementById('profileImageInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        if (file.size > 5 * 1024 * 1024) {
+          alert('Image size should be less than 5MB');
+          return;
+        }
+        
+        if (!file.type.match('image.*')) {
+          alert('Please select a valid image file');
+          return;
+        }
+        
+        const formData = new FormData();
+        formData.append('profile_image', file);
+        
+        const loadingDiv = document.createElement('div');
+        loadingDiv.innerHTML = '<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:white;padding:20px;border-radius:10px;z-index:9999;"><i class="fas fa-spinner fa-spin"></i> Uploading...</div>';
+        document.body.appendChild(loadingDiv);
+        
+        fetch('upload_profile_image.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          document.body.removeChild(loadingDiv);
+          if (data.success) {
+            window.location.reload();
+          } else {
+            alert('Error uploading image: ' + (data.message || 'Unknown error'));
+          }
+        })
+        .catch(error => {
+          document.body.removeChild(loadingDiv);
+          alert('Error uploading image: ' + error.message);
+        });
+      }
+    });
+
+    // Delete profile image
+    const deleteBtn = document.getElementById('deleteProfileImage');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        if (confirm('Are you sure you want to delete your profile picture?')) {
+          const loadingDiv = document.createElement('div');
+          loadingDiv.innerHTML = '<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:white;padding:20px;border-radius:10px;z-index:9999;"><i class="fas fa-spinner fa-spin"></i> Deleting...</div>';
+          document.body.appendChild(loadingDiv);
+          
+          fetch('delete_profile_image.php', {
+            method: 'POST'
+          })
+          .then(response => response.json())
+          .then(data => {
+            document.body.removeChild(loadingDiv);
+            if (data.success) {
+              window.location.reload();
+            } else {
+              alert('Error deleting image: ' + (data.message || 'Unknown error'));
+            }
+          })
+          .catch(error => {
+            document.body.removeChild(loadingDiv);
+            alert('Error deleting image: ' + error.message);
+          });
+        }
+      });
+    }
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-

@@ -202,8 +202,12 @@ if (empty($items)) {
               </div>
             </div>
           </div>
-          <button type="submit" class="btn btn-primary w-100 py-2 mt-2">Purchase</button>
+          <button type="submit" class="btn btn-primary w-100 py-2 mt-2" id="purchase-btn">Purchase</button>
         </form>
+        <!-- Persistent alert for large quantity -->
+        <div id="large-qty-alert" class="alert alert-warning mt-3 d-none" role="alert">
+          <strong>Large Quantity Detected:</strong> For orders above 150 units, please lower the quantity or contact your administrator for approval.
+        </div>
       </div>
     </div>
   </div>
@@ -212,6 +216,8 @@ if (empty($items)) {
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <!-- Animate.css for subtle animation -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
   document.addEventListener('DOMContentLoaded', function() {
     const productSelect = document.getElementById('product_id');
@@ -221,6 +227,9 @@ if (empty($items)) {
     const summaryUnit    = document.getElementById('summary-unit');
     const summaryQty     = document.getElementById('summary-qty');
     const summaryTotal   = document.getElementById('summary-total');
+    const purchaseForm   = document.querySelector('.purchase-form');
+    const purchaseBtn    = document.getElementById('purchase-btn');
+    const largeQtyAlert  = document.getElementById('large-qty-alert');
 
     function updateSummary() {
       const selected = productSelect.options[productSelect.selectedIndex];
@@ -236,11 +245,53 @@ if (empty($items)) {
       } else {
         summaryDiv.style.display = 'none';
       }
+      // Large quantity persistent alert logic
+      if (qty > 150) {
+        purchaseBtn.disabled = true;
+        largeQtyAlert.classList.remove('d-none');
+      } else {
+        purchaseBtn.disabled = false;
+        largeQtyAlert.classList.add('d-none');
+      }
     }
     productSelect.addEventListener('change', updateSummary);
     quantityInput.addEventListener('input', updateSummary);
-    // Show summary if default values are present
     updateSummary();
+
+    // SweetAlert2 for purchase confirmation and large quantity check
+    purchaseForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const qty = parseInt(quantityInput.value) || 0;
+      const selected = productSelect.options[productSelect.selectedIndex];
+      const name  = selected.getAttribute('data-name') || '';
+      const price = parseFloat(selected.getAttribute('data-price')) || 0;
+      const total = price * qty;
+      if (qty > 150) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Large Quantity Detected',
+          html: `<b>You are attempting to procure <span style=\"color:#d35400\">${qty}</span> units of <span style=\"color:#2980b9\">${name}</span>.</b><br><br>For large orders, please lower the quantity or contact your administrator for approval.`,
+          confirmButtonText: 'OK',
+          customClass: {popup: 'animate__animated animate__fadeInDown'}
+        });
+        purchaseBtn.disabled = true;
+        largeQtyAlert.classList.remove('d-none');
+        return;
+      }
+      Swal.fire({
+        title: 'Confirm Purchase',
+        html: `<div style=\"font-size:1.1em\">Are you sure you want to purchase <b>${qty}</b> units of <b>${name}</b> for a total of <b>KES ${total.toLocaleString(undefined, {minimumFractionDigits:2})}</b>?</div>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Purchase',
+        cancelButtonText: 'Cancel',
+        customClass: {popup: 'animate__animated animate__fadeInDown'}
+      }).then((result) => {
+        if (result.isConfirmed) {
+          purchaseForm.submit();
+        }
+      });
+    });
   });
   </script>
 </body>
